@@ -1,8 +1,8 @@
 package se.gu.cse.dit355.client.filter;
 
-public class TripLengthFilter {
+public class DistanceFilter {
 
-    public TripLengthFilter(){
+    public DistanceFilter(){
 
     }
     public void checkDistance(TravelRequest request){

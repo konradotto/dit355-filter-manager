@@ -33,12 +33,12 @@ public class FilterController implements MqttCallback {
 	private final IMqttClient middleware;
 
 	private Gson gson;
-	private TripLengthFilter tripLengthFilter;
+	private DistanceFilter distanceFilter;
 
 
 	public FilterController() throws MqttException {
 		gson = new Gson();
-		tripLengthFilter = new TripLengthFilter();
+		distanceFilter = new DistanceFilter();
 		middleware = new MqttClient(BROKER, USER_ID);
 		middleware.connect();
 		middleware.setCallback(this);
@@ -84,7 +84,7 @@ public class FilterController implements MqttCallback {
 
 		TravelRequest request = gson.fromJson(jsonMsg.toString(), TravelRequest.class); // gold from anything.
 
-		tripLengthFilter.checkDistance(request);
+		distanceFilter.checkDistance(request);
 
 		String output = gson.toJson(request); //make into JSon again (for printing to console)
 
