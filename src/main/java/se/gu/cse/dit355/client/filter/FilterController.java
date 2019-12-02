@@ -1,4 +1,4 @@
-package se.gu.cse.dit355.client.example;
+package se.gu.cse.dit355.client.filter;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

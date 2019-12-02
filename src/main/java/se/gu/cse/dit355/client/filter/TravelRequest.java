@@ -1,8 +1,4 @@
-package se.gu.cse.dit355.client.example;
-import com.fasterxml.jackson.databind.JsonNode;
-
-import java.sql.Time;
-import com.google.gson.Gson;
+package se.gu.cse.dit355.client.filter;
 
 public class TravelRequest {
 
@@ -58,19 +54,19 @@ public class TravelRequest {
 		this.deviceId = deviceID;
 	}
 
-	public se.gu.cse.dit355.client.example.Origin getOrigin() {
+	public se.gu.cse.dit355.client.filter.Origin getOrigin() {
 		return origin;
 	}
 
-	public void setOrigin(se.gu.cse.dit355.client.example.Origin origin) {
+	public void setOrigin(se.gu.cse.dit355.client.filter.Origin origin) {
 		origin = origin;
 	}
 
-	public se.gu.cse.dit355.client.example.Destination getDestination() {
+	public se.gu.cse.dit355.client.filter.Destination getDestination() {
 		return destination;
 	}
 
-	public void setDestination(se.gu.cse.dit355.client.example.Destination destination) {
+	public void setDestination(se.gu.cse.dit355.client.filter.Destination destination) {
 		this.destination = destination;
 	}
 

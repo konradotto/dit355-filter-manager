@@ -36,7 +36,7 @@
 					<finalName>alchemist</finalName>
 					<archive>
 						<manifest>
-							<mainClass>se.gu.cse.dit355.client.example.Alchemist</mainClass>
+							<mainClass>se.gu.cse.dit355.client.filter.Alchemist</mainClass>
 						</manifest>
 					</archive>
 					<descriptorRefs>
