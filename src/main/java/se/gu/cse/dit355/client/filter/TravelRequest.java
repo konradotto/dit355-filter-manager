@@ -9,14 +9,18 @@ public class TravelRequest {
 	private String timeOfDeparture;
 	private String purpose;
 	private boolean longTrip;
+	private String transportationType;
+	private long issuance;
 
-	public TravelRequest(String deviceID, String requestID, Origin origin, Destination destination, String TimeOfDeparture, String purpose){
+	public TravelRequest(long issuance, String transportationType, String deviceID, String requestID, Origin origin, Destination destination, String TimeOfDeparture, String purpose){
 		this.deviceId = deviceID;
 		this.requestId = requestID;
 		this.origin = origin;
 		this.destination = destination;
 		this.timeOfDeparture = TimeOfDeparture;
 		this.purpose = purpose;
+		this.transportationType = transportationType;
+		this.issuance = issuance;
 	}
 	public TravelRequest(){
 
@@ -44,6 +48,22 @@ public class TravelRequest {
 
 			return (dist);
 		}
+	}
+
+	public String getTransportationType() {
+		return transportationType;
+	}
+
+	public void setTransportationType(String transportationType) {
+		this.transportationType = transportationType;
+	}
+
+	public long getIssuance() {
+		return issuance;
+	}
+
+	public void setIssuance(long issuance) {
+		this.issuance = issuance;
 	}
 
 	public String getDeviceID() {

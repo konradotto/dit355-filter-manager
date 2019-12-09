@@ -1,5 +1,6 @@
 package se.gu.cse.dit355.client.filter;
 
+import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -26,7 +27,7 @@ public class FilterController implements MqttCallback {
 
 	private final static String SHORT_TRIPS = "travel_requests/short_trips";
 
-	private final static String BROKER = "tcp://localhost:1883";
+	private final static String PRESET_BROKER = "tcp://localhost:1883";
 
 	private final static String USER_ID = "Filter";
 
@@ -36,24 +37,67 @@ public class FilterController implements MqttCallback {
 	private DistanceFilter distanceFilter;
 
 
-	public FilterController() throws MqttException {
+	public FilterController(String broker) throws MqttException {
 		gson = new Gson();
 		distanceFilter = new DistanceFilter();
-		middleware = new MqttClient(BROKER, USER_ID);
+		middleware = new MqttClient(broker, USER_ID);
 		middleware.connect();
 		middleware.setCallback(this);
 
 	}
 
 	public static void main(String[] args) throws MqttException, InterruptedException {
-		FilterController f = new FilterController();
-		f.subscribeToMessages();
+		Scanner input = new Scanner(System.in);
+		System.out.println("Select choice:");
+		System.out.println("1. Choose preset broker address");
+		System.out.println("2. Enter address manually");
+		String choice = input.nextLine();
+
+		switch (choice){
+			case "1":
+				System.out.println("Address:");
+				System.out.println("1. tcp://localhost:1883");
+				choice = input.nextLine();
+				switch (choice) {
+					case "1":
+						FilterController f = new FilterController(PRESET_BROKER);
+						f.chooseTopic(input);
+				}
+			case "2":
+				System.out.println("Enter broker address in the format 'tcp://192.168.00.00:port'");
+				String broker = input.nextLine();
+				FilterController f = new FilterController(broker);
+				f.chooseTopic(input);
+		}
+
+	}
+	private void chooseTopic(Scanner input){
+		System.out.println("Select choice:");
+		System.out.println("1. Choose preset topic");
+		System.out.println("2. Enter topic manually");
+		String choice = input.nextLine();
+		switch (choice){
+			case "1":
+				System.out.println("topic:");
+				System.out.println("1. travel_requests");
+				choice = input.nextLine();
+				switch (choice) {
+					case "1":
+						subscribeToMessages(TOPIC_SOURCE);
+				}
+			case "2":
+				System.out.println("Enter broker address in the format 'tcp://192.168.00.00:port'");
+				String topic = input.nextLine();
+				subscribeToMessages(topic);
+
+		}
+
 	}
 
-	private void subscribeToMessages() {
+	private void subscribeToMessages(String topic) {
 		THREAD_POOL.submit(() -> {
 			try {
-				middleware.subscribe(TOPIC_SOURCE);
+				middleware.subscribe(topic);
 			} catch (MqttSecurityException e) {
 				e.printStackTrace();
 			} catch (MqttException e) {
@@ -93,7 +137,6 @@ public class FilterController implements MqttCallback {
 		System.out.println(request.distance()); //prints the distance of the origin and destination points
 
 
-		//TODO: publish the new data
 	}
 
 

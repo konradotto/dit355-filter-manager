@@ -12,6 +12,7 @@ public class DistanceFilter {
         else {
             request.setLongTrip(false);
         }
+
     }
 
 
