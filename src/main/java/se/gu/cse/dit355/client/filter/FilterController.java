@@ -29,7 +29,7 @@ public class FilterController implements MqttCallback {
 
 	private final static String PRESET_BROKER = "tcp://localhost:1883";
 
-	private final static String USER_ID = "Filters";
+	private final static String USER_ID = "Filter";
 
 	private final IMqttClient middleware;
 
