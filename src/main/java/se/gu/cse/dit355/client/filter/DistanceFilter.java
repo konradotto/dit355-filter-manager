@@ -2,19 +2,18 @@ package se.gu.cse.dit355.client.filter;
 
 public class DistanceFilter {
 
-    public DistanceFilter(){
+    public DistanceFilter() {
 
     }
-    public void checkDistance(TravelRequest request){
-        if(request.distance() > 10) {
+
+    public void checkDistance(TravelRequest request) {
+        if (request.distance() > 10) {
             request.setLongTrip(true);
-        }
-        else {
+        } else {
             request.setLongTrip(false);
         }
 
     }
-
 
 
 }

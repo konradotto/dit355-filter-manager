@@ -4,7 +4,7 @@ public class Destination {
     private double latitude;
     private double longitude;
 
-    public Destination(double latitude, double longitude){
+    public Destination(double latitude, double longitude) {
         this.latitude = latitude;
         this.longitude = longitude;
     }

@@ -4,7 +4,7 @@ public class Origin {
     private double latitude;
     private double longitude;
 
-    public Origin(double latitude, double longitude){
+    public Origin(double latitude, double longitude) {
         this.latitude = latitude;
         this.longitude = longitude;
     }
