@@ -90,7 +90,6 @@ public class FilterController implements MqttCallback {
                 System.out.println("Enter broker address in the format 'tcp://192.168.00.00:port'");
                 String topic = input.nextLine();
                 subscribeToMessages(topic);
-
         }
 
     }
@@ -136,8 +135,6 @@ public class FilterController implements MqttCallback {
         publishRequest(request); //publishes the request to the relevant topic
         System.out.println(output); //prints the current output to the console
         System.out.println(request.distance()); //prints the distance of the origin and destination points
-
-
     }
 
 
@@ -146,7 +143,6 @@ public class FilterController implements MqttCallback {
         MqttMessage outgoing = new MqttMessage();
         String output = gson.toJson(request);
         outgoing.setPayload(output.getBytes());
-
 
         if (request.isLongTrip()) {
             middleware.publish(LONG_TRIPS, outgoing); // place gold on the public// square; take and forward
