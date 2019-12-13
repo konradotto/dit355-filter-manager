@@ -1,8 +1,12 @@
 package se.gu.cse.dit355.client.filter;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.regex.Pattern;
 
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
@@ -16,8 +20,18 @@ import org.eclipse.paho.client.mqttv3.MqttSecurityException;
 import com.google.gson.Gson;
 import org.json.JSONObject;
 
-
 public class FilterController implements MqttCallback {
+
+    private final static String CHOOSE_PRESET_BROKER = "1";
+    private final static String ENTER_BROKER_MANUALLY = "2";
+
+    // Pattern for IP4 validation
+    private static final String PATTERN =
+            "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                    "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                    "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                    "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
+    private static Pattern ip4Pattern = Pattern.compile(PATTERN);
 
     private final static ExecutorService THREAD_POOL = Executors.newSingleThreadExecutor();
 
@@ -35,6 +49,7 @@ public class FilterController implements MqttCallback {
 
     private Gson gson;
     private DistanceFilter distanceFilter;
+    private static PrintStream out = System.out;
 
 
     public FilterController(String broker) throws MqttException {
@@ -48,26 +63,60 @@ public class FilterController implements MqttCallback {
 
     public static void main(String[] args) throws MqttException, InterruptedException {
         Scanner input = new Scanner(System.in);
-        System.out.println("Select choice:");
-        System.out.println("1. Choose preset broker address");
-        System.out.println("2. Enter address manually");
+        FilterController controller = new FilterController(chooseBrokerAddress(input));
+        controller.chooseTopic(input);
+        input.close();
+    }
+
+    private static String chooseBrokerAddress(Scanner input) {
+        System.err.flush();
+        out.println("\nSelect choice:");
+        out.println(CHOOSE_PRESET_BROKER + ". Choose preset broker address");
+        out.println(ENTER_BROKER_MANUALLY + ". Enter address manually");
         String choice = input.nextLine();
 
         switch (choice) {
-            case "1":
-                System.out.println("Address:");
-                System.out.println("1. tcp://localhost:1883");
+            case CHOOSE_PRESET_BROKER:
+                out.println("Address:");
+                out.println("1. " + PRESET_BROKER);
                 choice = input.nextLine();
                 switch (choice) {
                     case "1":
-                        FilterController f = new FilterController(PRESET_BROKER);
-                        f.chooseTopic(input);
+                        return PRESET_BROKER;
+                    default:
+                        System.err.println("Invalid choice. Repeating broker selection.");
+                        return chooseBrokerAddress(input);
                 }
-            case "2":
-                System.out.println("Enter broker address in the format 'tcp://192.168.00.00:port'");
-                String broker = input.nextLine();
-                FilterController f = new FilterController(broker);
-                f.chooseTopic(input);
+            case ENTER_BROKER_MANUALLY:
+                // Prompt user to enter the ip address of the broker
+                out.println("Enter broker ip-address in the format '192.168.00.00'");
+                String ipAddress = input.nextLine();
+                if (!ip4Pattern.matcher(ipAddress).matches()) {
+                    System.err.println("Invalid ip4 address entered. Repeating broker selection.");
+                    return chooseBrokerAddress(input);
+                }
+
+                // Prompt user to enter the port the broker is running on
+                // Port numbers range from 0 to 65535 where the ports from 0 to 1023 are reserved for privileged services
+                out.println("Enter broker port. This should be a number between '1024' and '65535':");
+                String portString = input.nextLine();
+                int port = -1;
+                try {
+                    port = Integer.parseInt(portString.trim());
+                } catch (NumberFormatException nfe) {
+                    System.err.println("Failed to transform entered port into number. Repeating broker selection.");
+                    return chooseBrokerAddress(input);
+                }
+
+                if (port < 1024 || port > 65535) {
+                    System.err.println("Invalid port number entered. Repeating broker selection.");
+                    return chooseBrokerAddress(input);
+                }
+
+                return "tcp://" + ipAddress + ":" + port;
+            default:
+                System.err.println("Invalid selection mode. Repeating broker selection.");
+                return chooseBrokerAddress(input);
         }
 
     }
@@ -86,10 +135,12 @@ public class FilterController implements MqttCallback {
                     case "1":
                         subscribeToMessages(TOPIC_SOURCE);
                 }
+                break;
             case "2":
                 System.out.println("Enter broker address in the format 'tcp://192.168.00.00:port'");
                 String topic = input.nextLine();
                 subscribeToMessages(topic);
+                break;
         }
 
     }
