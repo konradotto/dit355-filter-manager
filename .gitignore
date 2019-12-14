@@ -3,3 +3,5 @@
 .settings/
 target/
 .idea
+.idea/workspace.xml
+.msg
