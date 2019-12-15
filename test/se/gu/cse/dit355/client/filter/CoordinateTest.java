@@ -1,5 +1,7 @@
 package se.gu.cse.dit355.client.filter;
 
+import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class CoordinateTest {
@@ -9,6 +11,7 @@ class CoordinateTest {
     private Coordinate equator2 = new Coordinate(0, 90);
     private Coordinate equator3 = new Coordinate(0, 180);
     private Coordinate equator4 = new Coordinate(0, -90);
+    private Coordinate equilibrium = new Coordinate(45, 45);
 
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
@@ -58,5 +61,35 @@ class CoordinateTest {
         assertEquals(calc6, calc7, delta, "Two 90 degree arches on the equator should have the same length.");
         assertEquals(calc7, calc8, delta, "Two 90 degree arches on the equator should have the same length.");
         assertEquals(calc8, calc1, delta, "Two 90 degree arches on the equator should have the same length.");
+    }
+
+    @Test
+    void testToCartesianUnitVectorSpecialValues() {
+        double[] calculated = northPole.toCartesianUnitVector();
+        double[] expected = {0, 0, 1};
+        assertArrayEquals(expected, calculated, 1e-8, "North Pole should convert to (0, 0, 1)");
+
+        calculated = equator1.toCartesianUnitVector();
+        double[] expected1 = {1, 0, 0};
+        assertArrayEquals(expected1, calculated, 1e-8, "Point on 0-Meridian at equator should convert to (1, 0, 0)");
+
+        calculated = equator2.toCartesianUnitVector();
+        double[] expected2 = {0, 1, 0};
+        assertArrayEquals(expected2, calculated, 1e-8, "Point on 90-Meridian at equator should convert to (0, 1, 0)");
+
+        calculated = equator3.toCartesianUnitVector();
+        double[] expected3 = {-1, 0, 0};
+        assertArrayEquals(expected3, calculated, 1e-8, "Point on 180-Meridian at equator should convert to (-1, 0, 0)");
+
+        calculated = equator4.toCartesianUnitVector();
+        double[] expected4 = {0, -1, 0};
+        assertArrayEquals(expected4, calculated, 1e-8, "Point on -90-Meridian at equator should convert to (0, -1, 0)");
+    }
+
+    @Test
+    void testToCartesianUnitEquilibrium() {
+        double[] calculated = equilibrium.toCartesianUnitVector();
+        double[] expected = {0.5, 0.5, Math.sqrt(0.5)};
+        assertArrayEquals(expected, calculated, 1e-8, "Vector should be (0.5, 0.5, 0.5^0.5) for this coordinate.");
     }
 }

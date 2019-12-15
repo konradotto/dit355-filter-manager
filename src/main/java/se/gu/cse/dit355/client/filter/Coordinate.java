@@ -37,4 +37,19 @@ public class Coordinate {
 
         return dist;
     }
+
+    public double[] toCartesianUnitVector() {
+        double theta = Math.toRadians(90.0 - latitude);     // transform latitude into angel from North Pole
+        double phi = longitude >= 0 ? Math.toRadians(longitude) : Math.toRadians(180.0 - longitude);     // transform from -180-180 into 0-360
+
+        double x = Math.sin(theta) * Math.cos(phi);
+        double y = Math.sin(theta) * Math.sin(phi);
+        double z = Math.cos(theta);
+
+        // transform into unit vector
+        double length = Math.sqrt(x * x + y * y + z * z);
+
+        double[] cartesian = {x/length, y/length, z/length};
+        return cartesian;
+    }
 }
