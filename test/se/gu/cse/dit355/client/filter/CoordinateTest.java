@@ -65,25 +65,26 @@ class CoordinateTest {
 
     @Test
     void testToCartesianUnitVectorSpecialValues() {
+        double delta = 1e-8;
         double[] calculated = northPole.toCartesianUnitVector();
         double[] expected = {0, 0, 1};
-        assertArrayEquals(expected, calculated, 1e-8, "North Pole should convert to (0, 0, 1)");
+        assertArrayEquals(expected, calculated, delta, "North Pole should convert to (0, 0, 1)");
 
         calculated = equator1.toCartesianUnitVector();
         double[] expected1 = {1, 0, 0};
-        assertArrayEquals(expected1, calculated, 1e-8, "Point on 0-Meridian at equator should convert to (1, 0, 0)");
+        assertArrayEquals(expected1, calculated, delta, "Point on 0-Meridian at equator should convert to (1, 0, 0)");
 
         calculated = equator2.toCartesianUnitVector();
         double[] expected2 = {0, 1, 0};
-        assertArrayEquals(expected2, calculated, 1e-8, "Point on 90-Meridian at equator should convert to (0, 1, 0)");
+        assertArrayEquals(expected2, calculated, delta, "Point on 90-Meridian at equator should convert to (0, 1, 0)");
 
         calculated = equator3.toCartesianUnitVector();
         double[] expected3 = {-1, 0, 0};
-        assertArrayEquals(expected3, calculated, 1e-8, "Point on 180-Meridian at equator should convert to (-1, 0, 0)");
+        assertArrayEquals(expected3, calculated, delta, "Point on 180-Meridian at equator should convert to (-1, 0, 0)");
 
         calculated = equator4.toCartesianUnitVector();
         double[] expected4 = {0, -1, 0};
-        assertArrayEquals(expected4, calculated, 1e-8, "Point on -90-Meridian at equator should convert to (0, -1, 0)");
+        assertArrayEquals(expected4, calculated, delta, "Point on -90-Meridian at equator should convert to (0, -1, 0)");
     }
 
     @Test
@@ -91,5 +92,43 @@ class CoordinateTest {
         double[] calculated = equilibrium.toCartesianUnitVector();
         double[] expected = {0.5, 0.5, Math.sqrt(0.5)};
         assertArrayEquals(expected, calculated, 1e-8, "Vector should be (0.5, 0.5, 0.5^0.5) for this coordinate.");
+    }
+
+    @Test
+    void newCoordinateFromCartesianSimpleCases() {
+        double[] cartesian = {0, 0, 1};
+        Coordinate fromCartesian = Coordinate.newCoordinateFromCartesian(cartesian);
+        assertTrue(fromCartesian.equals(northPole), "Latitude and longitude of " +
+                "both coordinates should be almost identical but aren't.");
+
+        double[] cartesian1 = {1, 0, 0};
+        Coordinate fromCartesian1 = Coordinate.newCoordinateFromCartesian(cartesian1);
+        assertTrue(fromCartesian1.equals(equator1), "Latitude and longitude of " +
+                "both coordinates should be almost identical but aren't.");
+
+        double[] cartesian2 = {0, 1, 0};
+        Coordinate fromCartesian2 = Coordinate.newCoordinateFromCartesian(cartesian2);
+        assertTrue(fromCartesian2.equals(equator2), "Latitude and longitude of " +
+                "both coordinates should be almost identical but aren't.");
+
+        double[] cartesian3 = {-1, 0, 0};
+        Coordinate fromCartesian3 = Coordinate.newCoordinateFromCartesian(cartesian3);
+        assertTrue(fromCartesian3.equals(equator3), "Latitude and longitude of " +
+                "both coordinates should be almost identical but aren't.");
+
+        double[] cartesian4 = {0, -1, 0};
+        Coordinate fromCartesian4 = Coordinate.newCoordinateFromCartesian(cartesian4);
+        assertTrue(fromCartesian4.equals(equator4), "Latitude and longitude of " +
+                "both coordinates should be almost identical but aren't.");
+    }
+
+    @Test
+    void newCoordinateFromCartesianComplicatedCases() {
+        double epsilon = 1e-20;
+
+        double[] cartesian = {0.5, 0.5, Math.sqrt(0.5)};
+        Coordinate fromCartesian = Coordinate.newCoordinateFromCartesian(cartesian);
+        assertTrue(fromCartesian.almostEquals(equilibrium, epsilon), "Latitude and longitude of " +
+                "both coordinates should be almost identical but aren't.");
     }
 }

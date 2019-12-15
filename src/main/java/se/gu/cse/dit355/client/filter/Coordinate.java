@@ -1,5 +1,7 @@
 package se.gu.cse.dit355.client.filter;
 
+import java.util.Objects;
+
 public class Coordinate {
 
     private double latitude;
@@ -15,6 +17,28 @@ public class Coordinate {
         }
         this.latitude = latitude;
         this.longitude = longitude;
+    }
+
+    public static Coordinate  newCoordinateFromCartesian(double x, double y, double z) {
+        // Check whether the arguments form a unit vector
+        double length = Math.sqrt(x * x + y * y + z * z);
+        if (length < 1.0 - 1e-8 || length > 1.0 + 1e-8) {
+            throw new IllegalArgumentException("Doubles passed to Coordinate constructor need to form a unit vector");
+        }
+
+        double phi = Math.toDegrees(Math.atan2(y, x));
+        double longitude = phi > 180.0 ? 180.0 - phi : phi;
+        double theta = Math.acos(z);
+        double latitude = 90.0 - Math.toDegrees(theta);
+
+        return new Coordinate(latitude, longitude);
+    }
+
+    public static Coordinate newCoordinateFromCartesian(double[] unitVector) {
+        if (unitVector.length != 3) {
+            throw new IllegalArgumentException("Double Array passed to Coordinate constructor needs to hold exactly 3 values");
+        }
+        return newCoordinateFromCartesian(unitVector[0], unitVector[1], unitVector[2]);
     }
 
     // Earth coordinate distance calculation using the Haversine formula from geeksforgeeks article by Twinkl Bajaj
@@ -51,5 +75,27 @@ public class Coordinate {
 
         double[] cartesian = {x/length, y/length, z/length};
         return cartesian;
+    }
+
+    public boolean almostEquals(Object o, double epsilon) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Coordinate that = (Coordinate) o;
+
+        return Math.abs(that.latitude - latitude) < epsilon ? Math.abs(that.longitude - longitude) < epsilon : false;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Coordinate that = (Coordinate) o;
+        return Double.compare(that.latitude, latitude) == 0 &&
+                Double.compare(that.longitude, longitude) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(latitude, longitude);
     }
 }
