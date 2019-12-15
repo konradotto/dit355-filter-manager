@@ -1,5 +1,6 @@
 package se.gu.cse.dit355.client.filter;
 
+import java.util.List;
 import java.util.Objects;
 
 public class Coordinate {
@@ -62,6 +63,29 @@ public class Coordinate {
         return dist;
     }
 
+    public double getCartesianDistance(Coordinate other) {
+        double[] cartesian = this.toCartesianUnitVector();
+        double[] otherCartesian = other.toCartesianUnitVector();
+
+        return Math.sqrt(Math.pow(cartesian[0] - otherCartesian[0], 2) +
+                Math.pow(cartesian[1] - otherCartesian[1], 2) +
+                Math.pow(cartesian[2] - otherCartesian[2], 2));
+    }
+
+    public static Coordinate averageCoordinate(List<Coordinate> coordinates) {
+        double x, y, z;
+        x = y = z = 0;
+
+        for (Coordinate coordinate : coordinates) {
+            double[] cart = coordinate.toCartesianUnitVector();
+            x += cart[0];
+            y += cart[1];
+            z += cart[2];
+        }
+
+        return newCoordinateFromCartesian(normalize(x, y, z));
+    }
+
     public double[] toCartesianUnitVector() {
         double theta = Math.toRadians(90.0 - latitude);     // transform latitude into angel from North Pole
         double phi = longitude >= 0 ? Math.toRadians(longitude) : Math.toRadians(180.0 - longitude);     // transform from -180-180 into 0-360
@@ -70,11 +94,7 @@ public class Coordinate {
         double y = Math.sin(theta) * Math.sin(phi);
         double z = Math.cos(theta);
 
-        // transform into unit vector
-        double length = Math.sqrt(x * x + y * y + z * z);
-
-        double[] cartesian = {x/length, y/length, z/length};
-        return cartesian;
+        return normalize(x, y, z);
     }
 
     public boolean almostEquals(Object o, double epsilon) {
@@ -83,6 +103,14 @@ public class Coordinate {
         Coordinate that = (Coordinate) o;
 
         return Math.abs(that.latitude - latitude) < epsilon ? Math.abs(that.longitude - longitude) < epsilon : false;
+    }
+
+    @Override
+    public String toString() {
+        return "Coordinate{" +
+                "latitude=" + latitude +
+                ", longitude=" + longitude +
+                '}';
     }
 
     @Override
@@ -97,5 +125,13 @@ public class Coordinate {
     @Override
     public int hashCode() {
         return Objects.hash(latitude, longitude);
+    }
+
+    private static double[] normalize(double x, double y, double z) {
+        // normalize into unit vector
+        double length = Math.sqrt(x * x + y * y + z * z);
+
+        double[] cartesian = {x/length, y/length, z/length};
+        return cartesian;
     }
 }

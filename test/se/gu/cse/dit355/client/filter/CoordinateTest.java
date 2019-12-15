@@ -2,6 +2,9 @@ package se.gu.cse.dit355.client.filter;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class CoordinateTest {
@@ -12,9 +15,12 @@ class CoordinateTest {
     private Coordinate equator3 = new Coordinate(0, 180);
     private Coordinate equator4 = new Coordinate(0, -90);
     private Coordinate equilibrium = new Coordinate(45, 45);
+    private List<Coordinate> testList = new ArrayList<>();
 
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
+        testList.add(northPole);
+        testList.add(equator1);
     }
 
     @org.junit.jupiter.api.AfterEach
@@ -95,40 +101,50 @@ class CoordinateTest {
     }
 
     @Test
-    void newCoordinateFromCartesianSimpleCases() {
+    void testNewCoordinateFromCartesianSimpleCases() {
         double[] cartesian = {0, 0, 1};
         Coordinate fromCartesian = Coordinate.newCoordinateFromCartesian(cartesian);
-        assertTrue(fromCartesian.equals(northPole), "Latitude and longitude of " +
+        assertEquals(fromCartesian, northPole, "Latitude and longitude of " +
                 "both coordinates should be almost identical but aren't.");
 
         double[] cartesian1 = {1, 0, 0};
         Coordinate fromCartesian1 = Coordinate.newCoordinateFromCartesian(cartesian1);
-        assertTrue(fromCartesian1.equals(equator1), "Latitude and longitude of " +
+        assertEquals(fromCartesian1, equator1, "Latitude and longitude of " +
                 "both coordinates should be almost identical but aren't.");
 
         double[] cartesian2 = {0, 1, 0};
         Coordinate fromCartesian2 = Coordinate.newCoordinateFromCartesian(cartesian2);
-        assertTrue(fromCartesian2.equals(equator2), "Latitude and longitude of " +
+        assertEquals(fromCartesian2, equator2, "Latitude and longitude of " +
                 "both coordinates should be almost identical but aren't.");
 
         double[] cartesian3 = {-1, 0, 0};
         Coordinate fromCartesian3 = Coordinate.newCoordinateFromCartesian(cartesian3);
-        assertTrue(fromCartesian3.equals(equator3), "Latitude and longitude of " +
+        assertEquals(fromCartesian3, equator3, "Latitude and longitude of " +
                 "both coordinates should be almost identical but aren't.");
 
         double[] cartesian4 = {0, -1, 0};
         Coordinate fromCartesian4 = Coordinate.newCoordinateFromCartesian(cartesian4);
-        assertTrue(fromCartesian4.equals(equator4), "Latitude and longitude of " +
+        assertEquals(fromCartesian4, equator4, "Latitude and longitude of " +
                 "both coordinates should be almost identical but aren't.");
     }
 
     @Test
-    void newCoordinateFromCartesianComplicatedCases() {
+    void testNewCoordinateFromCartesianComplicatedCases() {
         double epsilon = 1e-20;
 
         double[] cartesian = {0.5, 0.5, Math.sqrt(0.5)};
         Coordinate fromCartesian = Coordinate.newCoordinateFromCartesian(cartesian);
         assertTrue(fromCartesian.almostEquals(equilibrium, epsilon), "Latitude and longitude of " +
                 "both coordinates should be almost identical but aren't.");
+    }
+
+    @Test
+    void testAverageCoordinate() {
+        double epsilon = 1e-14;
+
+        Coordinate result = Coordinate.averageCoordinate(testList);
+        Coordinate expected = new Coordinate(45, 0);
+        assertTrue(expected.almostEquals(result, epsilon), "Latitude and longitude of both coordinates" +
+                "should be almost identical");
     }
 }
