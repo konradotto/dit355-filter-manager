@@ -142,7 +142,7 @@ class CoordinateTest {
     void testAverageCoordinate() {
         double epsilon = 1e-14;
 
-        Coordinate result = Coordinate.averageCoordinate(testList);
+        Coordinate result = Coordinate.calculateAverageCoordinate(testList);
         Coordinate expected = new Coordinate(45, 0);
         assertTrue(expected.almostEquals(result, epsilon), "Latitude and longitude of both coordinates" +
                 "should be almost identical");

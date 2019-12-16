@@ -72,7 +72,7 @@ public class Coordinate {
                 Math.pow(cartesian[2] - otherCartesian[2], 2));
     }
 
-    public static Coordinate averageCoordinate(List<Coordinate> coordinates) {
+    public static Coordinate calculateAverageCoordinate(List<Coordinate> coordinates) {
         double x, y, z;
         x = y = z = 0;
 
@@ -127,7 +127,7 @@ public class Coordinate {
         return Objects.hash(latitude, longitude);
     }
 
-    private static double[] normalize(double x, double y, double z) {
+    public static double[] normalize(double x, double y, double z) {
         // normalize into unit vector
         double length = Math.sqrt(x * x + y * y + z * z);
 
