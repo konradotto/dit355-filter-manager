@@ -6,6 +6,7 @@ import java.io.PrintStream;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import org.eclipse.paho.client.mqttv3.IMqttClient;
@@ -41,31 +42,36 @@ public class FilterController implements MqttCallback {
 
     private final static String SHORT_TRIPS = "travel_requests/short_trips";
 
-    private final static String PRESET_BROKER = "tcp://localhost:1883";
+    private final static String PRESET_BROKER = "tcp://172.20.10.2:1883";
 
-    private final static String USER_ID = "Filter";
+    private final static String USER_ID = "Filter2555";
 
-    private final IMqttClient middleware;
-
+    private IMqttClient middleware;
+    private String currentTopic;
     private Gson gson;
     private DistanceFilter distanceFilter;
     private static PrintStream out = System.out;
 
 
-    public FilterController(String broker) throws MqttException {
+    public FilterController(String broker) throws MqttException, NullPointerException {
         gson = new Gson();
         distanceFilter = new DistanceFilter();
-        middleware = new MqttClient(broker, USER_ID);
+        System.out.println("Broker: " + broker+ "\n"+ USER_ID);
+        middleware = new MqttClient(broker,USER_ID);
         middleware.connect();
         middleware.setCallback(this);
 
+
     }
+
 
     public static void main(String[] args) throws MqttException, InterruptedException {
         Scanner input = new Scanner(System.in);
+
         FilterController controller = new FilterController(chooseBrokerAddress(input));
         controller.chooseTopic(input);
         input.close();
+
     }
 
     private static String chooseBrokerAddress(Scanner input) {
@@ -114,6 +120,9 @@ public class FilterController implements MqttCallback {
                 }
 
                 return "tcp://" + ipAddress + ":" + port;
+
+
+
             default:
                 System.err.println("Invalid selection mode. Repeating broker selection.");
                 return chooseBrokerAddress(input);
@@ -149,6 +158,7 @@ public class FilterController implements MqttCallback {
         THREAD_POOL.submit(() -> {
             try {
                 middleware.subscribe(topic);
+                this.currentTopic = topic;
             } catch (MqttSecurityException e) {
                 e.printStackTrace();
             } catch (MqttException e) {
@@ -157,17 +167,44 @@ public class FilterController implements MqttCallback {
         });
     }
 
+
     @Override
     public void connectionLost(Throwable throwable) {
         System.out.println("Connection lost!");
         try {
+            middleware.disconnectForcibly();
             middleware.disconnect();
             middleware.close();
         } catch (MqttException e) {
             e.printStackTrace();
         }
+        reconnect();
         // Try to reestablish? Plan B?
     }
+
+    public void reconnect() {
+        int i = 0;
+        boolean connection = false;
+
+        while (i < 10 && !connection) {
+            try {
+                i++;
+                System.out.println("Trying to reconnect...(" + i + ")");
+                TimeUnit.SECONDS.sleep(5);
+                middleware.connect();
+                middleware.setCallback(this);
+                connection = true;
+                System.out.println("Connected!");
+                System.out.println(currentTopic);
+                subscribeToMessages(currentTopic);
+
+
+            }catch (Exception e){
+                System.out.println( "Failed to connect(" + i + ")");
+            }
+
+        }
+  }
 
     @Override
     public void deliveryComplete(IMqttDeliveryToken token) {
