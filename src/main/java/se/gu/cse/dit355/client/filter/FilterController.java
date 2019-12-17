@@ -18,6 +18,7 @@ import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
 import org.eclipse.paho.client.mqttv3.MqttSecurityException;
 
 import com.google.gson.Gson;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.json.JSONObject;
 
 public class FilterController implements MqttCallback {
@@ -55,7 +56,7 @@ public class FilterController implements MqttCallback {
     public FilterController(String broker) throws MqttException {
         gson = new Gson();
         distanceFilter = new DistanceFilter();
-        middleware = new MqttClient(broker, USER_ID);
+        middleware = new MqttClient(broker, USER_ID, new MemoryPersistence());
         middleware.connect();
         middleware.setCallback(this);
 
