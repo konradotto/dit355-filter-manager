@@ -6,16 +6,10 @@ import java.io.PrintStream;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import org.eclipse.paho.client.mqttv3.IMqttClient;
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
-import org.eclipse.paho.client.mqttv3.MqttSecurityException;
+import org.eclipse.paho.client.mqttv3.*;
 
 import com.google.gson.Gson;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
@@ -44,23 +38,26 @@ public class FilterController implements MqttCallback {
 
     private final static String PRESET_BROKER = "tcp://localhost:1883";
 
-    private final static String USER_ID = "Filter";
+    private final static String USER_ID = MqttClient.generateClientId();
 
-    private final IMqttClient middleware;
+    public static final boolean CLEAN_SESSION_DEFAULT = false;
 
+    private IMqttClient middleware;
+    private String currentTopic;
     private Gson gson;
     private DistanceFilter distanceFilter;
     private static PrintStream out = System.out;
 
 
-    public FilterController(String broker) throws MqttException {
+    public FilterController(String broker) throws MqttException, NullPointerException {
         gson = new Gson();
         distanceFilter = new DistanceFilter();
+        System.out.println("Broker: " + broker+ "\n"+ USER_ID);
         middleware = new MqttClient(broker, USER_ID, new MemoryPersistence());
         middleware.connect();
         middleware.setCallback(this);
-
     }
+
 
     public static void main(String[] args) throws MqttException, InterruptedException {
         Scanner input = new Scanner(System.in);
@@ -71,27 +68,33 @@ public class FilterController implements MqttCallback {
 
     private static String chooseBrokerAddress(Scanner input) {
         System.err.flush();
-        out.println("\nSelect choice:");
-        out.println(CHOOSE_PRESET_BROKER + ". Choose preset broker address");
+        out.println("\nSelect option:");
+        out.println(CHOOSE_PRESET_BROKER + ". Select preset broker address");
         out.println(ENTER_BROKER_MANUALLY + ". Enter address manually");
         String choice = input.nextLine();
+        System.out.println("____________________________________");
 
         switch (choice) {
             case CHOOSE_PRESET_BROKER:
-                out.println("Address:");
+                out.println("Select the broker:");
                 out.println("1. " + PRESET_BROKER);
                 choice = input.nextLine();
                 switch (choice) {
+
                     case "1":
                         return PRESET_BROKER;
+
                     default:
                         System.err.println("Invalid choice. Repeating broker selection.");
                         return chooseBrokerAddress(input);
                 }
+
+
             case ENTER_BROKER_MANUALLY:
                 // Prompt user to enter the ip address of the broker
                 out.println("Enter broker ip-address in the format '192.168.00.00'");
                 String ipAddress = input.nextLine();
+
                 if (!ip4Pattern.matcher(ipAddress).matches()) {
                     System.err.println("Invalid ip4 address entered. Repeating broker selection.");
                     return chooseBrokerAddress(input);
@@ -99,9 +102,12 @@ public class FilterController implements MqttCallback {
 
                 // Prompt user to enter the port the broker is running on
                 // Port numbers range from 0 to 65535 where the ports from 0 to 1023 are reserved for privileged services
+
                 out.println("Enter broker port. This should be a number between '1024' and '65535':");
                 String portString = input.nextLine();
+
                 int port = -1;
+
                 try {
                     port = Integer.parseInt(portString.trim());
                 } catch (NumberFormatException nfe) {
@@ -115,65 +121,108 @@ public class FilterController implements MqttCallback {
                 }
 
                 return "tcp://" + ipAddress + ":" + port;
+
+
             default:
                 System.err.println("Invalid selection mode. Repeating broker selection.");
                 return chooseBrokerAddress(input);
         }
-
     }
 
     private void chooseTopic(Scanner input) {
-        System.out.println("Select choice:");
-        System.out.println("1. Choose preset topic");
-        System.out.println("2. Enter topic manually");
-        String choice = input.nextLine();
-        switch (choice) {
+      System.out.println("Select options:");
+      System.out.println("1. Choose preset topic");
+      System.out.println("2. Enter topic manually");
+      String choice = input.nextLine();
+
+      System.out.println("____________________________________");
+
+      switch (choice) {
+        case "1":
+          System.out.println("Select topic:");
+          System.out.println("1. travel_requests");
+
+          choice = input.nextLine();
+
+          switch (choice) {
             case "1":
-                System.out.println("topic:");
-                System.out.println("1. travel_requests");
-                choice = input.nextLine();
-                switch (choice) {
-                    case "1":
-                        subscribeToMessages(TOPIC_SOURCE);
-                }
-                break;
-            case "2":
-                System.out.println("Enter broker address in the format 'tcp://192.168.00.00:port'");
-                String topic = input.nextLine();
-                subscribeToMessages(topic);
-                break;
+              String topic = TOPIC_SOURCE;
+              connect(topic);
+          }
+          break;
+
+          case "2":
+            System.out.println("Enter broker address in the format 'tcp://192.168.00.00:port'");
+            String topic = input.nextLine();
+            connect(topic);
+            break;
+      }
+    }
+
+   
+    private void connect(String topic) {
+      THREAD_POOL.submit(() -> {
+        try {
+          middleware.subscribe(topic);
+          this.currentTopic = topic;
+          System.out.println("DEBUGG: entered try-catch for method called connect");
         }
 
+        catch (MqttSecurityException e) {
+          e.printStackTrace();
+        } catch (MqttException e) {
+          e.printStackTrace();
+        }
+      });
     }
 
-    private void subscribeToMessages(String topic) {
-        THREAD_POOL.submit(() -> {
-            try {
-                middleware.subscribe(topic);
-            } catch (MqttSecurityException e) {
-                e.printStackTrace();
-            } catch (MqttException e) {
-                e.printStackTrace();
-            }
-        });
-    }
 
     @Override
     public void connectionLost(Throwable throwable) {
-        System.out.println("Connection lost!");
+
+    System.out.println("Connection lost!");
+
+    try {
+      System.out.println("DEBUGG:  in try-catch for connectionlost method");
+      middleware.disconnectForcibly();
+    }
+
+    catch (MqttException e) {
+      e.printStackTrace();
+    }
+
+    reconnect(CLEAN_SESSION_DEFAULT);
+    System.out.println(this.currentTopic);
+    }
+
+   
+    public void reconnect(boolean cleanSessionDefault) {
+      int i = 0;
+      boolean connection = false;
+      while (i < 10 && !connection) {
         try {
-            middleware.disconnect();
-            middleware.close();
-        } catch (MqttException e) {
-            e.printStackTrace();
+          i++;
+          System.out.println("Trying to reconnect...(" + i + ")");
+          TimeUnit.SECONDS.sleep(1);
+          middleware.connect();
+          middleware.setCallback(this);
+          connection = true;
+        } catch (Exception e) {
+          System.out.println("Failed to connect(" + i + ")");
         }
-        // Try to reestablish? Plan B?
+
+      }
+      System.out.println("Connected!");
+      connect(currentTopic);
     }
 
-    @Override
+  
+  @Override
     public void deliveryComplete(IMqttDeliveryToken token) {
+
     }
 
+   
     @Override
     public void messageArrived(String topic, MqttMessage incoming) throws Exception {
         JSONObject jsonMsg = new JSONObject(new String(incoming.getPayload())); // topic does not matter, we can make7
