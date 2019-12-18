@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/FilterManager.iml" filepath="$PROJECT_DIR$/FilterManager.iml" />
+      <module fileurl="file://$PROJECT_DIR$/dit355-project-filter-manager.iml" filepath="$PROJECT_DIR$/dit355-project-filter-manager.iml" />
     </modules>
   </component>
 </project>
