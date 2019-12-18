@@ -7,27 +7,21 @@ public class Cluster {
 
     private Coordinate centroid;
     private List<Coordinate> members;
-    private double xSum;
-    private double ySum;
-    private double zSum;
 
-    public Cluster() {
+    public Cluster(Coordinate centroid) {
+        this.centroid = centroid;
         members = new ArrayList<>();
-        xSum = 0;
-        ySum = 0;
-        zSum = 0;
     }
 
-    public void calculateCentroid() {
+    public boolean calculateCentroid() {
+        Coordinate oldCentroid = centroid;
         centroid = Coordinate.calculateAverageCoordinate(members);
+
+        return (centroid.equals(oldCentroid));
     }
 
     public void addCoordinate(Coordinate coord) {
         members.add(coord);
-        double[] cartesian = coord.toCartesianUnitVector();
-        xSum += cartesian[0];
-        ySum += cartesian[1];
-        zSum += cartesian[2];
     }
 
     public void removeCoordinate(int index) {
@@ -35,10 +29,14 @@ public class Cluster {
             throw new IllegalArgumentException("Can not remove Coordinate from Cluster. Illegal index.");
         }
 
-        Coordinate removeMe = members.remove(index);
-        double[] cartesian = removeMe.toCartesianUnitVector();
-        xSum -= cartesian[0];
-        ySum -= cartesian[1];
-        zSum -= cartesian[2];
+        members.remove(index);
+    }
+
+    public void clearList() {
+        members.clear();
+    }
+
+    public double getDistance(Coordinate coord) {
+        return centroid.calculateDistance(coord);
     }
 }
