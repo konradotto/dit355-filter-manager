@@ -53,6 +53,7 @@ public class ClusterBuilder {
     }
 
     public void calculateKMeans() {
+        System.out.println("K Means will be calculated.");
         if (requests.size() < numberOfClusters) {
             throw new IllegalStateException("There should be more requests than clusters. Otherwise the solution is trivial.");
         }
@@ -70,6 +71,7 @@ public class ClusterBuilder {
         frozenMaxLongitude = maxLongitude;
         frozenMinLongitude = minLongitude;
 
+        // Move calculations to external Thread in order not to stop the processing of incoming requests
         Thread t1 = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -77,26 +79,29 @@ public class ClusterBuilder {
 
                 boolean changesMade;
                 do {
+                    System.out.println("Iteration");
                     changesMade = assignRequestsToClusters();
                 } while (changesMade);
+                printClusters();
                 frozen = false;
             }
         });
+        t1.run();
     }
 
     public void initializeCentroidsRandomly() {
-        if (requests.size() < 2) {
+        if (frozenRequests.size() < 2) {
             throw new ExceptionInInitializerError("Centroid can not be initialized randomly " +
-                    "while the requestMap contains less than 2 entries");
+                    "while the request list contains less than 2 entries");
         }
 
         Random rand = new Random();
         clusters = new ArrayList<>();
 
         // create numberOfClusters clusters with random centroids
-        for (int i = 0; i < numberOfClusters; i++) {
-            double latitude = minLatitude + (maxLatitude - minLatitude) * rand.nextDouble();
-            double longitude = minLongitude + (maxLongitude - minLongitude) * rand.nextDouble();
+        for (int i = 0; i < frozenNumberOfClusters; i++) {
+            double latitude = frozenMinLatitude + (frozenMaxLatitude - frozenMinLatitude) * rand.nextDouble();
+            double longitude = frozenMinLongitude + (frozenMaxLongitude - frozenMinLongitude) * rand.nextDouble();
             clusters.add(new Cluster(new Coordinate(latitude, longitude)));
         }
     }
@@ -113,7 +118,7 @@ public class ClusterBuilder {
             cl.clearList();
         }
 
-        for (TravelRequest request : requests) {
+        for (TravelRequest request : frozenRequests) {
             addToClosestCluster(request);
         }
 
@@ -157,6 +162,12 @@ public class ClusterBuilder {
                     " There need to be more than 0 clusters.");
         }
         this.numberOfClusters = k;
+    }
+
+    public void printClusters() {
+        for (Cluster cluster : clusters) {
+            System.out.println(cluster);
+        }
     }
 
     public int getNumberOfClusters() {

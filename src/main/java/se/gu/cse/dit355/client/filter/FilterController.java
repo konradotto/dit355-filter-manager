@@ -20,6 +20,8 @@ public class FilterController implements MqttCallback {
     private final static String CHOOSE_PRESET_BROKER = "1";
     private final static String ENTER_BROKER_MANUALLY = "2";
 
+    private final static int DEFAULT_NUMBER_OF_CLUSTERS = 20;
+
     // Pattern for IP4 validation
     private static final String PATTERN =
             "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
@@ -46,12 +48,14 @@ public class FilterController implements MqttCallback {
     private String currentTopic;
     private Gson gson;
     private DistanceFilter distanceFilter;
+    private ClusterBuilder clusterBuilder;
     private static PrintStream out = System.out;
 
 
     public FilterController(String broker) throws MqttException, NullPointerException {
         gson = new Gson();
         distanceFilter = new DistanceFilter();
+        clusterBuilder = new ClusterBuilder(DEFAULT_NUMBER_OF_CLUSTERS);
         System.out.println("Broker: " + broker+ "\n"+ USER_ID);
         middleware = new MqttClient(broker, USER_ID, new MemoryPersistence());
         middleware.connect();
@@ -230,12 +234,17 @@ public class FilterController implements MqttCallback {
         TravelRequest request = gson.fromJson(jsonMsg.toString(), TravelRequest.class); // gold from anything.
 
         distanceFilter.checkDistance(request);
+        clusterBuilder.addTravelRequest(request);
+
+        if (Integer.parseInt(request.getRequestId()) == 1000) {
+            clusterBuilder.calculateKMeans();
+        }
 
         String output = gson.toJson(request); //make into JSon again (for printing to console)
 
         publishRequest(request); //publishes the request to the relevant topic
-        System.out.println(output); //prints the current output to the console
-        System.out.println(request.distance()); //prints the distance of the origin and destination points
+        //System.out.println(output); //prints the current output to the console
+        //System.out.println(request.distance()); //prints the distance of the origin and destination points
     }
 
 

@@ -39,4 +39,9 @@ public class Cluster {
     public double getDistance(Coordinate coord) {
         return centroid.calculateDistance(coord);
     }
+
+    @Override
+    public String toString() {
+        return centroid.toString();
+    }
 }

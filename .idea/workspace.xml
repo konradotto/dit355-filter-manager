@@ -5,6 +5,7 @@
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/Cluster.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/Cluster.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/ClusterBuilder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/ClusterBuilder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/FilterController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/FilterController.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
