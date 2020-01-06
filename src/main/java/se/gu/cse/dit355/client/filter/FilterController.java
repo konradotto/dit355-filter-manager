@@ -42,7 +42,7 @@ public class FilterController implements MqttCallback {
 
     private final static String PRESET_BROKER = "tcp://localhost:1883";
 
-    private final static String USER_ID = MqttClient.generateClientId();
+    private final static String USER_ID = "paho213"; // MqttClient.generateClientId();
 
     public static final boolean CLEAN_SESSION_DEFAULT = false;
 
@@ -76,6 +76,7 @@ public class FilterController implements MqttCallback {
         middleware = new MqttClient(broker, USER_ID, new MemoryPersistence());
         middleware.connect();
         middleware.setCallback(this);
+        initFilters();
     }
 
     private void initFilters() {
