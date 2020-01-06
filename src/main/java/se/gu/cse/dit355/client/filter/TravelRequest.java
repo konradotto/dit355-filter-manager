@@ -10,6 +10,7 @@ public class TravelRequest {
     private String purpose;
     private boolean longTrip;
     private String transportationType;
+    private boolean nearLocation;
     private long issuance;
 
     public TravelRequest(long issuance, String transportationType, String deviceID, String requestID, Origin origin, Destination destination, String TimeOfDeparture, String purpose) {
@@ -33,6 +34,14 @@ public class TravelRequest {
 
     public void setLongTrip(boolean longTrip) {
         this.longTrip = longTrip;
+    }
+
+    public boolean isNearLocation() {
+        return nearLocation;
+    }
+
+    public void setIsNearLocation(boolean nearLocation) {
+        this.nearLocation = nearLocation;
     }
 
     public double distance() {

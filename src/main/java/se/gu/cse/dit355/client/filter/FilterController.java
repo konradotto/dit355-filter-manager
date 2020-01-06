@@ -1,8 +1,8 @@
 package se.gu.cse.dit355.client.filter;
 
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -16,6 +16,8 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.json.JSONObject;
 
 public class FilterController implements MqttCallback {
+
+    private final static String LS = System.lineSeparator();
 
     private final static String CHOOSE_PRESET_BROKER = "1";
     private final static String ENTER_BROKER_MANUALLY = "2";
@@ -44,22 +46,46 @@ public class FilterController implements MqttCallback {
 
     public static final boolean CLEAN_SESSION_DEFAULT = false;
 
+    private static final double SEPARATING_DISTANCE = 10.0;
+
+    private static final double GBG_CENTER_LAT = 57.707233;
+    private static final double GBG_CENTER_LONG = 11.967017;
+    private static final Coordinate GOTHENBURG_CENTER = new Coordinate(GBG_CENTER_LAT, GBG_CENTER_LONG);
+    private static final double GOTHENBURG_MAX_RADIUS = 22;     // kilometers approximated using circles on a map
+
     private IMqttClient middleware;
     private String currentTopic;
     private Gson gson;
-    private DistanceFilter distanceFilter;
+    private DistanceFilter tripLengthFilter;
+    private LocationFilter filterInGothenburg;
     private ClusterBuilder clusterBuilder;
     private static PrintStream out = System.out;
 
+    // flags for activating/deactivating filters
+    private boolean filterTripLength = true;
+    private boolean filterGothenburg = true;
+
+    private List<Filter> filters;
 
     public FilterController(String broker) throws MqttException, NullPointerException {
         gson = new Gson();
-        distanceFilter = new DistanceFilter();
+        tripLengthFilter = new DistanceFilter(SEPARATING_DISTANCE);
+        filterInGothenburg = new LocationFilter(GOTHENBURG_CENTER, GOTHENBURG_MAX_RADIUS, "gothenburg", "not_gothenburg");
         clusterBuilder = new ClusterBuilder(DEFAULT_NUMBER_OF_CLUSTERS);
-        System.out.println("Broker: " + broker+ "\n"+ USER_ID);
+        System.out.println("Broker: " + broker + LS + USER_ID);
         middleware = new MqttClient(broker, USER_ID, new MemoryPersistence());
         middleware.connect();
         middleware.setCallback(this);
+    }
+
+    private void initFilters() {
+        filters = new ArrayList<>();
+        if (filterTripLength) {
+            filters.add(tripLengthFilter);
+        }
+        if (filterGothenburg) {
+            filters.add(filterInGothenburg);
+        }
     }
 
 
@@ -184,40 +210,38 @@ public class FilterController implements MqttCallback {
     @Override
     public void connectionLost(Throwable throwable) {
 
-    System.out.println("Connection lost!");
+        System.out.println("Connection lost!");
 
-    try {
-      System.out.println("DEBUGG:  in try-catch for connectionlost method");
-      middleware.disconnectForcibly();
-    }
-
-    catch (MqttException e) {
-      e.printStackTrace();
-    }
-
-    reconnect(CLEAN_SESSION_DEFAULT);
-    System.out.println(this.currentTopic);
-    }
-
-   
-    public void reconnect(boolean cleanSessionDefault) {
-      int i = 0;
-      boolean connection = false;
-      while (i < 10 && !connection) {
         try {
-          i++;
-          System.out.println("Trying to reconnect...(" + i + ")");
-          TimeUnit.SECONDS.sleep(1);
-          middleware.connect();
-          middleware.setCallback(this);
-          connection = true;
-        } catch (Exception e) {
-          System.out.println("Failed to connect(" + i + ")");
+            System.out.println("DEBUGG:  in try-catch for connectionLost method");
+            middleware.disconnectForcibly();
+        } catch (MqttException e) {
+            e.printStackTrace();
         }
 
-      }
-      System.out.println("Connected!");
-      connect(currentTopic);
+        reconnect(CLEAN_SESSION_DEFAULT);
+        System.out.println(this.currentTopic);
+    }
+
+
+    public void reconnect(boolean cleanSessionDefault) {
+        int i = 0;
+        boolean connection = false;
+        while (i < 10 && !connection) {
+            try {
+                i++;
+                System.out.println("Trying to reconnect...(" + i + ")");
+                TimeUnit.SECONDS.sleep(1);
+                middleware.connect();
+                middleware.setCallback(this);
+                connection = true;
+            } catch (Exception e) {
+                System.out.println("Failed to connect(" + i + ")");
+            }
+
+        }
+        System.out.println("Connected!");
+        connect(currentTopic);
     }
 
   
@@ -233,7 +257,7 @@ public class FilterController implements MqttCallback {
 
         TravelRequest request = gson.fromJson(jsonMsg.toString(), TravelRequest.class); // gold from anything.
 
-        distanceFilter.checkDistance(request);
+        tripLengthFilter.checkDistance(request);
         clusterBuilder.addTravelRequest(request);
 
         if (Integer.parseInt(request.getRequestId()) == 1000) {
@@ -254,12 +278,13 @@ public class FilterController implements MqttCallback {
         String output = gson.toJson(request);
         outgoing.setPayload(output.getBytes());
 
-        if (request.isLongTrip()) {
-            middleware.publish(LONG_TRIPS, outgoing); // place gold on the public// square; take and forward
-            // at free will!
-        } else if (!request.isLongTrip()) {
-            middleware.publish(SHORT_TRIPS, outgoing);
+        String topic = TOPIC_SOURCE;
+
+        for (Filter filter : filters) {
+            topic += "/" + filter.filter(request);
         }
+        System.out.println("Message received");
+        middleware.publish(topic, outgoing);
     }
 
 }
