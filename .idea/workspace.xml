@@ -2,12 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="fc1af9af-1ca5-43ff-9073-cc7dda77f2f4" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/Filter.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/LocationFilter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/DistanceFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/DistanceFilter.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/FilterController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/FilterController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/TravelRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/TravelRequest.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
