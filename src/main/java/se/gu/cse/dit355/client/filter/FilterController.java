@@ -137,13 +137,16 @@ public class FilterController implements MqttCallback {
             printLoopMenu();
             switch (input.nextLine().toLowerCase()) {
                 case "c":
+                    activeClusterBuilderOrigin.sendClear();
                     activeClusterBuilderOrigin.calculateKMeans();
                     activeClusterBuilderDestination.calculateKMeans();
                     break;
                 case "o":
+                    activeClusterBuilderOrigin.sendClear();
                     activeClusterBuilderOrigin.calculateKMeans();
                     break;
                 case "d":
+                    activeClusterBuilderDestination.sendClear();
                     activeClusterBuilderDestination.calculateKMeans();
                     break;
                 case "s":
@@ -355,8 +358,9 @@ public class FilterController implements MqttCallback {
    
     @Override
     public void messageArrived(String topic, MqttMessage incoming) throws Exception {
+        System.out.println(new String(incoming.getPayload()));
         JSONObject jsonMsg = new JSONObject(new String(incoming.getPayload())); // topic does not matter, we can make7
-
+        System.out.println(jsonMsg.toString());
         TravelRequest request = gson.fromJson(jsonMsg.toString(), TravelRequest.class);
         publishRequest(request, ""); //publishes the request to the relevant topic
     }
