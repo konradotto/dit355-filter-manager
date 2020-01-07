@@ -4,7 +4,6 @@
     <list default="true" id="fc1af9af-1ca5-43ff-9073-cc7dda77f2f4" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/ClusterBuilder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/ClusterBuilder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/FilterController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/FilterController.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -118,7 +117,7 @@
       <workItem from="1578350968680" duration="577000" />
       <workItem from="1578354934393" duration="232000" />
       <workItem from="1578356685211" duration="3071000" />
-      <workItem from="1578362438752" duration="6309000" />
+      <workItem from="1578362438752" duration="6745000" />
     </task>
     <servers />
   </component>

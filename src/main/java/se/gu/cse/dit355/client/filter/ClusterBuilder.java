@@ -40,7 +40,7 @@ public class ClusterBuilder {
         topic = "";
         setNumberOfClusters(k);
         requests = new ArrayList<>();
-        mode = mode;
+        this.mode = mode;
     }
 
     public void setTopic(String topic) {
