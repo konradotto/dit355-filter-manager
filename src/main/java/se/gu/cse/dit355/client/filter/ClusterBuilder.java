@@ -1,11 +1,17 @@
 package se.gu.cse.dit355.client.filter;
 
+import com.google.gson.Gson;
+import org.eclipse.paho.client.mqttv3.IMqttClient;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+
 import java.util.*;
 
 public class ClusterBuilder {
 
-    private static final int ORIGIN_CLUSTERING = 0;
-    private static final int DESTINATION_CLUSTERING = 1;
+    public static final int ORIGIN_CLUSTERING = 0;
+    public static final int DESTINATION_CLUSTERING = 1;
 
     private static final int NOT_CLUSTERED = -1;
 
@@ -26,10 +32,23 @@ public class ClusterBuilder {
     private double frozenMinLongitude;
     private boolean frozen = false;
 
-    public ClusterBuilder(int k) {
+    private FilterController controller;
+    private String topic;
+
+
+    public ClusterBuilder(int k, int mode) {
+        topic = "";
         setNumberOfClusters(k);
         requests = new ArrayList<>();
-        mode = ORIGIN_CLUSTERING;
+        this.mode = mode;
+    }
+
+    public void setTopic(String topic) {
+        this.topic = topic;
+    }
+
+    public void setController(FilterController controller) {
+        this.controller = controller;
     }
 
     public void addTravelRequest(TravelRequest request) {
@@ -53,15 +72,19 @@ public class ClusterBuilder {
     }
 
     public void calculateKMeans() {
-        System.out.println("K Means will be calculated.");
-        if (requests.size() < numberOfClusters) {
-            throw new IllegalStateException("There should be more requests than clusters. Otherwise the solution is trivial.");
+        if (requests.size() <= numberOfClusters) {
+            System.out.println("There should be more requests than clusters. Otherwise the solution is trivial.");
+            System.out.println("Returning without calculating clusters.");
+            return;
         }
         // only allow one thread calculating K-Means at any time
         if (frozen) {
+            System.out.println("K-Means-Clustering already in progress blocking this funtion.");
+            System.out.println("Returning to caller.");
             return;
         }
         frozen = true;
+        System.out.println("Starting K-Means-Clustering.");
 
         frozenRequests = new ArrayList<>(requests);
         frozenNumberOfClusters = numberOfClusters;
@@ -78,11 +101,14 @@ public class ClusterBuilder {
                 initializeCentroidsRandomly();
 
                 boolean changesMade;
+                int iterations = 0;
                 do {
-                    System.out.println("Iteration");
                     changesMade = assignRequestsToClusters();
+                    iterations++;
                 } while (changesMade);
+                System.out.println("Finished clustering after " + iterations + " Iterations.");
                 printClusters();
+                publishClusters();
                 frozen = false;
             }
         });
@@ -95,15 +121,24 @@ public class ClusterBuilder {
                     "while the request list contains less than 2 entries");
         }
 
-        Random rand = new Random();
         clusters = new ArrayList<>();
 
         // create numberOfClusters clusters with random centroids
         for (int i = 0; i < frozenNumberOfClusters; i++) {
-            double latitude = frozenMinLatitude + (frozenMaxLatitude - frozenMinLatitude) * rand.nextDouble();
-            double longitude = frozenMinLongitude + (frozenMaxLongitude - frozenMinLongitude) * rand.nextDouble();
+            double latitude = getRandomLatitude();
+            double longitude = getRandomLongitude();
             clusters.add(new Cluster(new Coordinate(latitude, longitude)));
         }
+    }
+
+    private double getRandomLatitude() {
+        Random rand = new Random();
+        return frozenMinLatitude + (frozenMaxLatitude - frozenMinLatitude) * rand.nextDouble();
+    }
+
+    private double getRandomLongitude() {
+        Random rand = new Random();
+        return frozenMinLongitude + (frozenMaxLongitude - frozenMinLongitude) * rand.nextDouble();
     }
 
     public boolean assignRequestsToClusters() {
@@ -125,6 +160,9 @@ public class ClusterBuilder {
         boolean changesMade = false;
         for (Cluster cluster : clusters) {
             changesMade = cluster.calculateCentroid() || changesMade;
+            if (cluster.getMagnitude() == 0) {
+                cluster.setCentroid(getRandomLatitude(), getRandomLongitude());
+            }
         }
         return changesMade;
     }
@@ -156,17 +194,50 @@ public class ClusterBuilder {
         clusters.get(minIndex).addCoordinate(coord);
     }
 
-    public void setNumberOfClusters(int k) {
-        if (k <= 0) {
-            throw new IllegalArgumentException("Can not set number of clusters to " + k +
-                    " There need to be more than 0 clusters.");
-        }
-        this.numberOfClusters = k;
-    }
-
     public void printClusters() {
+        System.out.println(mode);
         for (Cluster cluster : clusters) {
             System.out.println(cluster);
+        }
+    }
+
+    private void publishClusters() {
+        long issuance = System.currentTimeMillis() / 1000L;
+        String type = "cluster";
+        String deviceId = "ClusterBuilder";
+        String purpose = (mode == ORIGIN_CLUSTERING ? "departure" : "arrival");
+
+        int i = 1;
+        for (Cluster cluster : clusters) {
+            String requestId = String.valueOf(i);
+            Coordinate centroid = cluster.getCentroid();
+            Origin org = new Origin(centroid.getLatitude(), centroid.getLongitude());
+            Destination dest = new Destination(centroid.getLatitude(), centroid.getLongitude());
+            String magnitude = String.valueOf(cluster.getMagnitude());
+            TravelRequest toRequset = new TravelRequest(issuance, type, deviceId, requestId, org, dest, magnitude, purpose);
+
+            try {
+                controller.publishRequest(toRequset, topic);
+            } catch (MqttException e) {
+                e.printStackTrace();
+            }
+            i++;
+        }
+    }
+
+    public void sendClear() {
+        long issuance = System.currentTimeMillis() / 1000L;
+        String type = "cluster";
+        String deviceId = "ClusterBuilder";
+        String purpose = (mode == ORIGIN_CLUSTERING ? "departure" : "arrival");
+
+        // Request to clear the visualizer
+        TravelRequest deleteOldClusters = new TravelRequest(issuance, "delete_clusters", deviceId,
+                "0", new Origin(0, 0), new Destination(0, 0), "0", purpose);
+        try {
+            controller.publishRequest(deleteOldClusters, topic);
+        } catch (MqttException e) {
+            e.printStackTrace();
         }
     }
 
@@ -174,4 +245,11 @@ public class ClusterBuilder {
         return numberOfClusters;
     }
 
+    public void setNumberOfClusters(int k) {
+        if (k <= 0) {
+            throw new IllegalArgumentException("Can not set number of clusters to " + k +
+                    " There need to be more than 0 clusters.");
+        }
+        this.numberOfClusters = k;
+    }
 }
