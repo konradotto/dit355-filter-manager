@@ -10,8 +10,7 @@ public class TravelRequest {
     private String purpose;
     private boolean longTrip;
     private String transportationType;
-    private boolean nearLocation;
-    private long issuance;
+    private Long issuance;
 
     public TravelRequest(long issuance, String transportationType, String deviceID, String requestID, Origin origin, Destination destination, String TimeOfDeparture, String purpose) {
         this.deviceId = deviceID;
@@ -28,20 +27,20 @@ public class TravelRequest {
 
     }
 
+    public boolean isValid() {
+        if (deviceId == null || requestId == null || origin == null || destination == null || timeOfDeparture == null
+                || purpose == null || issuance == null) {
+            return false;
+        }
+        return true;
+    }
+
     public boolean isLongTrip() {
         return longTrip;
     }
 
     public void setLongTrip(boolean longTrip) {
         this.longTrip = longTrip;
-    }
-
-    public boolean isNearLocation() {
-        return nearLocation;
-    }
-
-    public void setIsNearLocation(boolean nearLocation) {
-        this.nearLocation = nearLocation;
     }
 
     public double distance() {

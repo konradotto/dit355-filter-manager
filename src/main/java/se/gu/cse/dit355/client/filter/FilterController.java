@@ -35,6 +35,7 @@ public class FilterController implements MqttCallback {
     private final static ExecutorService THREAD_POOL = Executors.newSingleThreadExecutor();
 
     private final static String TOPIC_SOURCE = "travel_requests";
+    private static final String TOPIC_EXTERNAL = "external";
 
     private final static String LONG_TRIPS = "travel_requests/long_trips";
 
@@ -267,49 +268,72 @@ public class FilterController implements MqttCallback {
     }
 
     private void chooseTopic(Scanner input) {
-      System.out.println("Select options:");
-      System.out.println("1. Choose preset topic");
-      System.out.println("2. Enter topic manually");
-      String choice = input.nextLine();
+        System.out.println("Select options:");
+        System.out.println("1. Choose preset topic");
+        System.out.println("2. Enter topic manually");
+        String choice = input.nextLine();
 
-      System.out.println("____________________________________");
+        System.out.println("____________________________________");
 
-      switch (choice) {
-        case "1":
-          System.out.println("Select topic:");
-          System.out.println("1. travel_requests");
 
-          choice = input.nextLine();
+        boolean connected = false;
 
-          switch (choice) {
-            case "1":
-              String topic = TOPIC_SOURCE;
-              connect(topic);
-          }
-          break;
+        while (!connected) {
+            switch (choice) {
+                case "1":
+                    System.out.println("Select topic:");
+                    System.out.println("1. " + TOPIC_SOURCE);
+                    out.println("2. " + TOPIC_EXTERNAL);
 
-          case "2":
-            System.out.println("Enter broker address in the format 'tcp://192.168.00.00:port'");
-            String topic = input.nextLine();
-            connect(topic);
-            break;
-      }
+                    choice = input.nextLine();
+
+                    switch (choice) {
+                        case "1":
+                            connect(TOPIC_SOURCE);
+                            connected = !confirm("Do you want to connect to further topics?", input);
+                            break;
+                        case "2":
+                            connect(TOPIC_EXTERNAL);
+                            connected = !confirm("Do you want to connect to further topics?", input);
+                            break;
+                    }
+                    break;
+                case "2":
+                    out.println("Enter the name of the topic you'd like to connect to");
+                    String topic = input.nextLine();
+                    connect(topic);
+                    connected = !confirm("Do you want to connect to further topics?", input);
+                    break;
+                default:
+                    out.println("Invalid selection.");
+            }
+        }
     }
 
-   
-    private void connect(String topic) {
-      THREAD_POOL.submit(() -> {
-        try {
-          middleware.subscribe(topic);
-          this.currentTopic = topic;
+    private boolean confirm(String question, Scanner in) {
+        out.println(question + " [y]es or [n]o (default is no)");
+        switch (in.nextLine()) {
+            case "y":
+                return true;
+            case "n":
+                return false;
+            default:
+                out.println("Invalid input. Interpreting it as a 'no'.");
+                return false;
         }
+    }
 
-        catch (MqttSecurityException e) {
-          e.printStackTrace();
-        } catch (MqttException e) {
-          e.printStackTrace();
-        }
-      });
+    private void connect(String topic) {
+        THREAD_POOL.submit(() -> {
+            try {
+                middleware.subscribe(topic);
+                this.currentTopic = topic;
+            } catch (MqttSecurityException e) {
+                e.printStackTrace();
+            } catch (MqttException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
 
@@ -349,19 +373,34 @@ public class FilterController implements MqttCallback {
         connect(currentTopic);
     }
 
-  
-  @Override
+
+    @Override
     public void deliveryComplete(IMqttDeliveryToken token) {
 
     }
 
-   
+
     @Override
     public void messageArrived(String topic, MqttMessage incoming) throws Exception {
-        System.out.println(new String(incoming.getPayload()));
-        JSONObject jsonMsg = new JSONObject(new String(incoming.getPayload())); // topic does not matter, we can make7
-        System.out.println(jsonMsg.toString());
-        TravelRequest request = gson.fromJson(jsonMsg.toString(), TravelRequest.class);
+        JSONObject jsonMsg;
+        try {
+            jsonMsg = new JSONObject(new String(incoming.getPayload())); // topic does not matter, we can make7
+        } catch (Exception e) {
+            // System.out.println("Message of illegal format detected.");
+            return;
+        }
+        TravelRequest request;
+        try {
+            request = gson.fromJson(jsonMsg.toString(), TravelRequest.class);
+        } catch (Exception e) {
+            // System.out.println("Message can't be converted to TravelRequest");
+            return;
+        }
+        // validate that the message fulfills the minimum requirement for a TravelRequest
+        if (!request.isValid()) {
+            // System.out.println("not a valid travel request.");
+            return;
+        }
         publishRequest(request, ""); //publishes the request to the relevant topic
     }
 
