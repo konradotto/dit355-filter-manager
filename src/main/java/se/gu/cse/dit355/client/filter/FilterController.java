@@ -60,11 +60,20 @@ public class FilterController implements MqttCallback {
     private LocationFilter filterInGothenburg;
     private ClusterBuilder longTripClusterBuilderOrigin;
     private ClusterBuilder longTripClusterBuilderDestination;
+    private ClusterBuilder shortTripClusterBuilderOrigin;
+    private ClusterBuilder shortTripClusterBuilderDestination;
+
+    private ClusterBuilder activeClusterBuilderOrigin;
+    private ClusterBuilder activeClusterBuilderDestination;
+
     private static PrintStream out = System.out;
 
     // flags for activating/deactivating filters
     private boolean filterTripLength = true;
     private boolean filterGothenburg = true;
+
+    // flag for switching clustering
+    private boolean clusterLongDist = true;
 
     private List<Filter> filters;
 
@@ -74,6 +83,8 @@ public class FilterController implements MqttCallback {
         filterInGothenburg = new LocationFilter(GOTHENBURG_CENTER, GOTHENBURG_MAX_RADIUS, "gothenburg", "not_gothenburg");
         longTripClusterBuilderOrigin = new ClusterBuilder(DEFAULT_NUMBER_OF_CLUSTERS, ClusterBuilder.ORIGIN_CLUSTERING);
         longTripClusterBuilderDestination = new ClusterBuilder(DEFAULT_NUMBER_OF_CLUSTERS, ClusterBuilder.DESTINATION_CLUSTERING);
+        shortTripClusterBuilderOrigin = new ClusterBuilder(DEFAULT_NUMBER_OF_CLUSTERS, ClusterBuilder.ORIGIN_CLUSTERING);
+        shortTripClusterBuilderDestination = new ClusterBuilder(DEFAULT_NUMBER_OF_CLUSTERS, ClusterBuilder.DESTINATION_CLUSTERING);
         System.out.println("Broker: " + broker + LS + USER_ID);
         middleware = new MqttClient(broker, USER_ID, new MemoryPersistence());
         middleware.connect();
@@ -82,7 +93,13 @@ public class FilterController implements MqttCallback {
         longTripClusterBuilderOrigin.setTopic("travel_requests/long_trips/gothenburg");
         longTripClusterBuilderDestination.setController(this);
         longTripClusterBuilderDestination.setTopic("travel_requests/long_trips/gothenburg");
+
+        shortTripClusterBuilderOrigin.setController(this);
+        shortTripClusterBuilderOrigin.setTopic("travel_requests/short_trips/gothenburg");
+        shortTripClusterBuilderDestination.setController(this);
+        shortTripClusterBuilderDestination.setTopic("travel_requests/short_trips/gothenburg");
         initFilters();
+        activateClusterBuilders();
     }
 
     private void initFilters() {
@@ -92,6 +109,16 @@ public class FilterController implements MqttCallback {
         }
         if (filterGothenburg) {
             filters.add(filterInGothenburg);
+        }
+    }
+
+    private void activateClusterBuilders() {
+        if (clusterLongDist) {
+            activeClusterBuilderOrigin = longTripClusterBuilderOrigin;
+            activeClusterBuilderDestination = longTripClusterBuilderDestination;
+        } else {
+            activeClusterBuilderOrigin = shortTripClusterBuilderOrigin;
+            activeClusterBuilderDestination = shortTripClusterBuilderDestination;
         }
     }
 
@@ -105,11 +132,45 @@ public class FilterController implements MqttCallback {
     }
 
     private void inputLoop(Scanner input) {
-        while (printLoopMenu()) {
+        boolean keepLooping = true;
+        while (keepLooping) {
+            printLoopMenu();
             switch (input.nextLine().toLowerCase()) {
                 case "c":
-                    longTripClusterBuilderOrigin.calculateKMeans();
-                    longTripClusterBuilderDestination.calculateKMeans();
+                    activeClusterBuilderOrigin.calculateKMeans();
+                    activeClusterBuilderDestination.calculateKMeans();
+                    break;
+                case "o":
+                    activeClusterBuilderOrigin.calculateKMeans();
+                    break;
+                case "d":
+                    activeClusterBuilderDestination.calculateKMeans();
+                    break;
+                case "s":
+                    clusterLongDist = !clusterLongDist;
+                    activateClusterBuilders();
+                    break;
+                case "t":
+                    if (filterTripLength) {
+                        filters.remove(tripLengthFilter);
+                        filterTripLength = false;
+                    } else {
+                        filters.add(tripLengthFilter);
+                        filterTripLength = true;
+                    }
+                    break;
+                case "g":
+                    if (filterGothenburg) {
+                        filters.remove(filterInGothenburg);
+                        filterGothenburg = false;
+                    } else {
+                        filters.add(filterInGothenburg);
+                        filterGothenburg = true;
+                    }
+                    break;
+                case "q":
+                    keepLooping = false;
+                    out.println("Exiting program");
                     break;
                 default:
                     out.println("Invalid option selected.");
@@ -117,16 +178,31 @@ public class FilterController implements MqttCallback {
         }
     }
 
-    private static boolean printLoopMenu() {
-        out.println("Interactive mode. Enter one of the following options to do something:");
-        out.println("[c]luster");
+    private boolean printLoopMenu() {
+        out.flush();
+        out.println(LS + "Interactive mode. Enter one of the following options to trigger an event:");
+        out.println("---------------------------------------------------------------------------");
+        out.println("Currently clustering " + (clusterLongDist ? "long trips" : "short trips") + ":");
+        out.println("* [c]luster origins and destinations");
+        out.println("* [o]rigin clustering only");
+        out.println("* [d]estination clustering only");
+        out.println("* [s]witch to clustering " + (clusterLongDist ? "short trips" : "long trips"));
 
+
+        out.println("Toggle on/off filters:");
+        out.println("* [t]rip length filter turn " + (filterTripLength ? "off" : "on"));
+        out.println("* [g]othenburg filter turn " + (filterGothenburg ? "off" : "on"));
+
+        out.println(LS + "Program options:");
+        out.println("* [q]uit the program");
+
+        out.flush();
         return true;
     }
 
     private static String chooseBrokerAddress(Scanner input) {
         System.err.flush();
-        out.println("\nSelect option:");
+        out.println(LS + "Select option:");
         out.println(CHOOSE_PRESET_BROKER + ". Select preset broker address");
         out.println(ENTER_BROKER_MANUALLY + ". Enter address manually");
         String choice = input.nextLine();
@@ -223,7 +299,6 @@ public class FilterController implements MqttCallback {
         try {
           middleware.subscribe(topic);
           this.currentTopic = topic;
-          System.out.println("DEBUGG: entered try-catch for method called connect");
         }
 
         catch (MqttSecurityException e) {
@@ -241,7 +316,6 @@ public class FilterController implements MqttCallback {
         System.out.println("Connection lost!");
 
         try {
-            System.out.println("DEBUGG:  in try-catch for connectionLost method");
             middleware.disconnectForcibly();
         } catch (MqttException e) {
             e.printStackTrace();
@@ -297,12 +371,19 @@ public class FilterController implements MqttCallback {
         String topic = TOPIC_SOURCE;
 
         for (Filter filter : filters) {
-            topic += "/" + filter.filter(request);
+            if (!filter.filter(request).equals("")) {
+                topic += "/" + filter.filter(request);
+            }
         }
 
-        if(tripLengthFilter.isLongDistance(request)) {
-            longTripClusterBuilderOrigin.addTravelRequest(request);
-            longTripClusterBuilderDestination.addTravelRequest(request);
+        if (filterInGothenburg.passesFilter(request)) {
+            if (tripLengthFilter.isLongDistance(request)) {
+                longTripClusterBuilderOrigin.addTravelRequest(request);
+                longTripClusterBuilderDestination.addTravelRequest(request);
+            } else {
+                shortTripClusterBuilderOrigin.addTravelRequest(request);
+                shortTripClusterBuilderDestination.addTravelRequest(request);
+            }
         }
 
         if (!top.equals("")) {

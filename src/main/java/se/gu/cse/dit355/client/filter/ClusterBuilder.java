@@ -72,15 +72,19 @@ public class ClusterBuilder {
     }
 
     public void calculateKMeans() {
-        System.out.println("K Means will be calculated.");
-        if (requests.size() < numberOfClusters) {
-            throw new IllegalStateException("There should be more requests than clusters. Otherwise the solution is trivial.");
+        if (requests.size() <= numberOfClusters) {
+            System.out.println("There should be more requests than clusters. Otherwise the solution is trivial.");
+            System.out.println("Returning without calculating clusters.");
+            return;
         }
         // only allow one thread calculating K-Means at any time
         if (frozen) {
+            System.out.println("K-Means-Clustering already in progress blocking this funtion.");
+            System.out.println("Returning to caller.");
             return;
         }
         frozen = true;
+        System.out.println("Starting K-Means-Clustering.");
 
         frozenRequests = new ArrayList<>(requests);
         frozenNumberOfClusters = numberOfClusters;
@@ -97,10 +101,12 @@ public class ClusterBuilder {
                 initializeCentroidsRandomly();
 
                 boolean changesMade;
+                int iterations = 0;
                 do {
-                    System.out.println("Iteration");
                     changesMade = assignRequestsToClusters();
+                    iterations++;
                 } while (changesMade);
+                System.out.println("Finished clustering after " + iterations + " Iterations.");
                 printClusters();
                 publishClusters();
                 frozen = false;
@@ -189,6 +195,7 @@ public class ClusterBuilder {
     }
 
     public void printClusters() {
+        System.out.println(mode);
         for (Cluster cluster : clusters) {
             System.out.println(cluster);
         }
@@ -198,8 +205,9 @@ public class ClusterBuilder {
         long issuance = System.currentTimeMillis() / 1000L;
         String type = "cluster";
         String deviceId = "ClusterBuilder";
-        String purpose = mode == ORIGIN_CLUSTERING ? "departure" : "arrival";
+        String purpose = (mode == ORIGIN_CLUSTERING ? "departure" : "arrival");
 
+        // Request to clear the visualizer
         TravelRequest deleteOldClusters = new TravelRequest(issuance, "delete_clusters", deviceId,
                 "0", new Origin(0, 0), new Destination(0, 0), "0", purpose);
         try {
