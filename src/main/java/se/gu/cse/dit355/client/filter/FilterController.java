@@ -42,7 +42,7 @@ public class FilterController implements MqttCallback {
 
     private final static String PRESET_BROKER = "tcp://localhost:1883";
 
-    private final static String USER_ID = "paho213"; // MqttClient.generateClientId();
+    private final static String USER_ID = MqttClient.generateClientId();
 
     public static final boolean CLEAN_SESSION_DEFAULT = false;
 
@@ -58,7 +58,8 @@ public class FilterController implements MqttCallback {
     private Gson gson;
     private DistanceFilter tripLengthFilter;
     private LocationFilter filterInGothenburg;
-    private ClusterBuilder longTripClusterBuilder;
+    private ClusterBuilder longTripClusterBuilderOrigin;
+    private ClusterBuilder longTripClusterBuilderDestination;
     private static PrintStream out = System.out;
 
     // flags for activating/deactivating filters
@@ -71,13 +72,16 @@ public class FilterController implements MqttCallback {
         gson = new Gson();
         tripLengthFilter = new DistanceFilter(SEPARATING_DISTANCE);
         filterInGothenburg = new LocationFilter(GOTHENBURG_CENTER, GOTHENBURG_MAX_RADIUS, "gothenburg", "not_gothenburg");
-        longTripClusterBuilder = new ClusterBuilder(DEFAULT_NUMBER_OF_CLUSTERS);
+        longTripClusterBuilderOrigin = new ClusterBuilder(DEFAULT_NUMBER_OF_CLUSTERS, ClusterBuilder.ORIGIN_CLUSTERING);
+        longTripClusterBuilderDestination = new ClusterBuilder(DEFAULT_NUMBER_OF_CLUSTERS, ClusterBuilder.DESTINATION_CLUSTERING);
         System.out.println("Broker: " + broker + LS + USER_ID);
         middleware = new MqttClient(broker, USER_ID, new MemoryPersistence());
         middleware.connect();
         middleware.setCallback(this);
-        longTripClusterBuilder.setController(this);
-        longTripClusterBuilder.setTopic("travel_requests/long_trips/gothenburg");
+        longTripClusterBuilderOrigin.setController(this);
+        longTripClusterBuilderOrigin.setTopic("travel_requests/long_trips/gothenburg");
+        longTripClusterBuilderDestination.setController(this);
+        longTripClusterBuilderDestination.setTopic("travel_requests/long_trips/gothenburg");
         initFilters();
     }
 
@@ -104,7 +108,8 @@ public class FilterController implements MqttCallback {
         while (printLoopMenu()) {
             switch (input.nextLine().toLowerCase()) {
                 case "c":
-                    longTripClusterBuilder.calculateKMeans();
+                    longTripClusterBuilderOrigin.calculateKMeans();
+                    longTripClusterBuilderDestination.calculateKMeans();
                     break;
                 default:
                     out.println("Invalid option selected.");
@@ -296,7 +301,8 @@ public class FilterController implements MqttCallback {
         }
 
         if(tripLengthFilter.isLongDistance(request)) {
-            longTripClusterBuilder.addTravelRequest(request);
+            longTripClusterBuilderOrigin.addTravelRequest(request);
+            longTripClusterBuilderDestination.addTravelRequest(request);
         }
 
         if (!top.equals("")) {

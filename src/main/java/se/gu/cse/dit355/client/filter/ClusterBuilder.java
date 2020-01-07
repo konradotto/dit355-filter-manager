@@ -10,8 +10,8 @@ import java.util.*;
 
 public class ClusterBuilder {
 
-    private static final int ORIGIN_CLUSTERING = 0;
-    private static final int DESTINATION_CLUSTERING = 1;
+    public static final int ORIGIN_CLUSTERING = 0;
+    public static final int DESTINATION_CLUSTERING = 1;
 
     private static final int NOT_CLUSTERED = -1;
 
@@ -36,11 +36,11 @@ public class ClusterBuilder {
     private String topic;
 
 
-    public ClusterBuilder(int k) {
+    public ClusterBuilder(int k, int mode) {
         topic = "";
         setNumberOfClusters(k);
         requests = new ArrayList<>();
-        mode = ORIGIN_CLUSTERING;
+        mode = mode;
     }
 
     public void setTopic(String topic) {
@@ -205,8 +205,8 @@ public class ClusterBuilder {
     private void publishClusters() {
         long issuance = System.currentTimeMillis() / 1000L;
         String type = "cluster";
-        String purpose = "cluster";
         String deviceId = "ClusterBuilder";
+        String purpose = mode == ORIGIN_CLUSTERING ? "departure" : "arrival";
 
         int i = 1;
         for (Cluster cluster : clusters) {
