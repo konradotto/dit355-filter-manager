@@ -188,14 +188,6 @@ public class ClusterBuilder {
         clusters.get(minIndex).addCoordinate(coord);
     }
 
-    public void setNumberOfClusters(int k) {
-        if (k <= 0) {
-            throw new IllegalArgumentException("Can not set number of clusters to " + k +
-                    " There need to be more than 0 clusters.");
-        }
-        this.numberOfClusters = k;
-    }
-
     public void printClusters() {
         for (Cluster cluster : clusters) {
             System.out.println(cluster);
@@ -207,6 +199,14 @@ public class ClusterBuilder {
         String type = "cluster";
         String deviceId = "ClusterBuilder";
         String purpose = mode == ORIGIN_CLUSTERING ? "departure" : "arrival";
+
+        TravelRequest deleteOldClusters = new TravelRequest(issuance, "delete_clusters", deviceId,
+                "0", new Origin(0, 0), new Destination(0, 0), "0", purpose);
+        try {
+            controller.publishRequest(deleteOldClusters, topic);
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
 
         int i = 1;
         for (Cluster cluster : clusters) {
@@ -228,5 +228,13 @@ public class ClusterBuilder {
 
     public int getNumberOfClusters() {
         return numberOfClusters;
+    }
+
+    public void setNumberOfClusters(int k) {
+        if (k <= 0) {
+            throw new IllegalArgumentException("Can not set number of clusters to " + k +
+                    " There need to be more than 0 clusters.");
+        }
+        this.numberOfClusters = k;
     }
 }
