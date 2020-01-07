@@ -105,6 +105,14 @@ public class Coordinate {
         return Math.abs(that.latitude - latitude) < epsilon ? Math.abs(that.longitude - longitude) < epsilon : false;
     }
 
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
     @Override
     public String toString() {
         return "Coordinate{" +
