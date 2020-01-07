@@ -1,5 +1,11 @@
 package se.gu.cse.dit355.client.filter;
 
+import com.google.gson.Gson;
+import org.eclipse.paho.client.mqttv3.IMqttClient;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+
 import java.util.*;
 
 public class ClusterBuilder {
@@ -26,10 +32,23 @@ public class ClusterBuilder {
     private double frozenMinLongitude;
     private boolean frozen = false;
 
+    private FilterController controller;
+    private String topic;
+
+
     public ClusterBuilder(int k) {
+        topic = "";
         setNumberOfClusters(k);
         requests = new ArrayList<>();
         mode = ORIGIN_CLUSTERING;
+    }
+
+    public void setTopic(String topic) {
+        this.topic = topic;
+    }
+
+    public void setController(FilterController controller) {
+        this.controller = controller;
     }
 
     public void addTravelRequest(TravelRequest request) {
@@ -83,6 +102,7 @@ public class ClusterBuilder {
                     changesMade = assignRequestsToClusters();
                 } while (changesMade);
                 printClusters();
+                publishClusters();
                 frozen = false;
             }
         });
@@ -95,15 +115,24 @@ public class ClusterBuilder {
                     "while the request list contains less than 2 entries");
         }
 
-        Random rand = new Random();
         clusters = new ArrayList<>();
 
         // create numberOfClusters clusters with random centroids
         for (int i = 0; i < frozenNumberOfClusters; i++) {
-            double latitude = frozenMinLatitude + (frozenMaxLatitude - frozenMinLatitude) * rand.nextDouble();
-            double longitude = frozenMinLongitude + (frozenMaxLongitude - frozenMinLongitude) * rand.nextDouble();
+            double latitude = getRandomLatitude();
+            double longitude = getRandomLongitude();
             clusters.add(new Cluster(new Coordinate(latitude, longitude)));
         }
+    }
+
+    private double getRandomLatitude() {
+        Random rand = new Random();
+        return frozenMinLatitude + (frozenMaxLatitude - frozenMinLatitude) * rand.nextDouble();
+    }
+
+    private double getRandomLongitude() {
+        Random rand = new Random();
+        return frozenMinLongitude + (frozenMaxLongitude - frozenMinLongitude) * rand.nextDouble();
     }
 
     public boolean assignRequestsToClusters() {
@@ -125,6 +154,9 @@ public class ClusterBuilder {
         boolean changesMade = false;
         for (Cluster cluster : clusters) {
             changesMade = cluster.calculateCentroid() || changesMade;
+            if (cluster.getMagnitude() == 0) {
+                cluster.setCentroid(getRandomLatitude(), getRandomLongitude());
+            }
         }
         return changesMade;
     }
@@ -170,8 +202,31 @@ public class ClusterBuilder {
         }
     }
 
+    private void publishClusters() {
+        long issuance = System.currentTimeMillis() / 1000L;
+        String type = "cluster";
+        String purpose = "cluster";
+        String deviceId = "ClusterBuilder";
+
+        int i = 1;
+        for (Cluster cluster : clusters) {
+            String requestId = String.valueOf(i);
+            Coordinate centroid = cluster.getCentroid();
+            Origin org = new Origin(centroid.getLatitude(), centroid.getLongitude());
+            Destination dest = new Destination(centroid.getLatitude(), centroid.getLongitude());
+            String magnitude = String.valueOf(cluster.getMagnitude());
+            TravelRequest toRequset = new TravelRequest(issuance, type, deviceId, requestId, org, dest, magnitude, purpose);
+
+            try {
+                controller.publishRequest(toRequset, topic);
+            } catch (MqttException e) {
+                e.printStackTrace();
+            }
+            i++;
+        }
+    }
+
     public int getNumberOfClusters() {
         return numberOfClusters;
     }
-
 }

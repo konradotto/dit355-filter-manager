@@ -2,6 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="fc1af9af-1ca5-43ff-9073-cc7dda77f2f4" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/Cluster.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/Cluster.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/ClusterBuilder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/ClusterBuilder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/Coordinate.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/Coordinate.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/FilterController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/se/gu/cse/dit355/client/filter/FilterController.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -38,9 +42,10 @@
     <property name="last_opened_file_path" value="$USER_HOME$/Documents/SEM/DIT092_TeamProgramming_TA/project-group-3" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
-    <property name="project.structure.last.edited" value="Problems" />
+    <property name="project.structure.last.edited" value="Modules" />
     <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.2" />
+    <property name="settings.editor.selected.configurable" value="configurable.group.tools" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -113,6 +118,9 @@
       <workItem from="1576753848350" duration="1233000" />
       <workItem from="1578338357234" duration="6896000" />
       <workItem from="1578350968680" duration="577000" />
+      <workItem from="1578354934393" duration="232000" />
+      <workItem from="1578356685211" duration="3071000" />
+      <workItem from="1578362438752" duration="4349000" />
     </task>
     <servers />
   </component>

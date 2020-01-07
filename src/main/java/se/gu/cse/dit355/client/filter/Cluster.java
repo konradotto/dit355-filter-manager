@@ -7,9 +7,11 @@ public class Cluster {
 
     private Coordinate centroid;
     private List<Coordinate> members;
+    private double magnitude;
 
     public Cluster(Coordinate centroid) {
         this.centroid = centroid;
+        this.magnitude = 100;
         members = new ArrayList<>();
     }
 
@@ -17,7 +19,7 @@ public class Cluster {
         Coordinate oldCentroid = centroid;
         centroid = Coordinate.calculateAverageCoordinate(members);
 
-        return (centroid.equals(oldCentroid));
+        return (!centroid.equals(oldCentroid));
     }
 
     public void addCoordinate(Coordinate coord) {
@@ -40,8 +42,20 @@ public class Cluster {
         return centroid.calculateDistance(coord);
     }
 
+    public Coordinate getCentroid() {
+        return centroid;
+    }
+
+    public void setCentroid(double latitude, double longitude) {
+        centroid = new Coordinate(latitude, longitude);
+    }
+
+    public double getMagnitude() {
+        return members.size();
+    }
+
     @Override
     public String toString() {
-        return centroid.toString();
+        return centroid.toString() + " " + getMagnitude();
     }
 }

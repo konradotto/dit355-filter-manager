@@ -51,14 +51,14 @@ public class FilterController implements MqttCallback {
     private static final double GBG_CENTER_LAT = 57.707233;
     private static final double GBG_CENTER_LONG = 11.967017;
     private static final Coordinate GOTHENBURG_CENTER = new Coordinate(GBG_CENTER_LAT, GBG_CENTER_LONG);
-    private static final double GOTHENBURG_MAX_RADIUS = 22;     // kilometers approximated using circles on a map
+    private static final double GOTHENBURG_MAX_RADIUS = 22000;     // meters approximated using circles on a map
 
     private IMqttClient middleware;
     private String currentTopic;
     private Gson gson;
     private DistanceFilter tripLengthFilter;
     private LocationFilter filterInGothenburg;
-    private ClusterBuilder clusterBuilder;
+    private ClusterBuilder longTripClusterBuilder;
     private static PrintStream out = System.out;
 
     // flags for activating/deactivating filters
@@ -71,11 +71,13 @@ public class FilterController implements MqttCallback {
         gson = new Gson();
         tripLengthFilter = new DistanceFilter(SEPARATING_DISTANCE);
         filterInGothenburg = new LocationFilter(GOTHENBURG_CENTER, GOTHENBURG_MAX_RADIUS, "gothenburg", "not_gothenburg");
-        clusterBuilder = new ClusterBuilder(DEFAULT_NUMBER_OF_CLUSTERS);
+        longTripClusterBuilder = new ClusterBuilder(DEFAULT_NUMBER_OF_CLUSTERS);
         System.out.println("Broker: " + broker + LS + USER_ID);
         middleware = new MqttClient(broker, USER_ID, new MemoryPersistence());
         middleware.connect();
         middleware.setCallback(this);
+        longTripClusterBuilder.setController(this);
+        longTripClusterBuilder.setTopic("travel_requests/long_trips/gothenburg");
         initFilters();
     }
 
@@ -94,7 +96,27 @@ public class FilterController implements MqttCallback {
         Scanner input = new Scanner(System.in);
         FilterController controller = new FilterController(chooseBrokerAddress(input));
         controller.chooseTopic(input);
+        controller.inputLoop(input);
         input.close();
+    }
+
+    private void inputLoop(Scanner input) {
+        while (printLoopMenu()) {
+            switch (input.nextLine().toLowerCase()) {
+                case "c":
+                    longTripClusterBuilder.calculateKMeans();
+                    break;
+                default:
+                    out.println("Invalid option selected.");
+            }
+        }
+    }
+
+    private static boolean printLoopMenu() {
+        out.println("Interactive mode. Enter one of the following options to do something:");
+        out.println("[c]luster");
+
+        return true;
     }
 
     private static String chooseBrokerAddress(Scanner input) {
@@ -256,24 +278,12 @@ public class FilterController implements MqttCallback {
     public void messageArrived(String topic, MqttMessage incoming) throws Exception {
         JSONObject jsonMsg = new JSONObject(new String(incoming.getPayload())); // topic does not matter, we can make7
 
-        TravelRequest request = gson.fromJson(jsonMsg.toString(), TravelRequest.class); // gold from anything.
-
-        tripLengthFilter.checkDistance(request);
-        clusterBuilder.addTravelRequest(request);
-
-        if (Integer.parseInt(request.getRequestId()) == 1000) {
-            clusterBuilder.calculateKMeans();
-        }
-
-        String output = gson.toJson(request); //make into JSon again (for printing to console)
-
-        publishRequest(request); //publishes the request to the relevant topic
-        //System.out.println(output); //prints the current output to the console
-        //System.out.println(request.distance()); //prints the distance of the origin and destination points
+        TravelRequest request = gson.fromJson(jsonMsg.toString(), TravelRequest.class);
+        publishRequest(request, ""); //publishes the request to the relevant topic
     }
 
 
-    private void publishRequest(TravelRequest request) throws MqttPersistenceException, MqttException {
+    public void publishRequest(TravelRequest request, String top) throws MqttPersistenceException, MqttException {
 
         MqttMessage outgoing = new MqttMessage();
         String output = gson.toJson(request);
@@ -284,8 +294,17 @@ public class FilterController implements MqttCallback {
         for (Filter filter : filters) {
             topic += "/" + filter.filter(request);
         }
-        System.out.println("Message received");
-        middleware.publish(topic, outgoing);
-    }
 
+        if(tripLengthFilter.isLongDistance(request)) {
+            longTripClusterBuilder.addTravelRequest(request);
+        }
+
+        if (!top.equals("")) {
+            topic = top;
+        }
+
+        if (!topic.equals(TOPIC_SOURCE)) {
+            middleware.publish(topic, outgoing);
+        }
+    }
 }
