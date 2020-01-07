@@ -43,6 +43,44 @@ _____
 * The pipe transports it to additional filters if the subscriber want additonal filerting.
 * Once the message is filtered enough to the messages the subscriber wanted, the pump sends the message out through the sink.
 
+#### The following functionalities are available 
+* Message validation (check that incoming data can be parsed into TravelRequests)
+* Distance filtering: splits the TravelRequests into short\_trips and long\_trips
+* Location filtering: checks whether incoming TravelRequests are in Gothenburg or not
+* Origin clustering: cluster TravelRequests by their origin
+* Destination clustering: cluster TravelRequests by their destination
+
+#### The user can make the following decisions:
+* Select the broker address
+* Select one or multiple topics to subscribe to
+* Turn filters on and off
+* Initiate clustering
+* Change clustering settings
 
 ## Format
-The message will be sent out in the format of a JSON.
+The filtered messages will be sent out in the format of a JSON.
+
+## Support
+
+If you have any questions regarding this specific module,
+please contact the lead developer of this module, [Tobias Bank](mailto:TobiasBanck90@gmail.com), 
+or the co-developer and maintainer, [Konrad Otto](gusottko@student.gu.se).
+
+## Authors and Acknowledgment
+
+This module is part of the distributed system for Visual Transportation Support 
+developed by Clusterrot (Group 9) during the course 
+DIT355 Miniproject: Distributed Systems at the University of Gothenburg.  
+The system was implemented from November 2019 through January 2020.  
+
+Clusterrot consists of the following members:
+- Tobias Bank
+- Armin Ghoroghi
+- Simon Johansson
+- Kardo Marof
+- Jean Paul Massoud
+- Konrad Otto
+
+### Documentation
+
+* To access Diagrams and Documentaion please visit [Documentaion](https://git.chalmers.se/courses/dit355/2019/group-9/dit355-project-documentation)
