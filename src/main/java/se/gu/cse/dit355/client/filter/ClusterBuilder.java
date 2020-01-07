@@ -10,8 +10,10 @@ import java.util.*;
 
 public class ClusterBuilder {
 
-    public static final int ORIGIN_CLUSTERING = 0;
-    public static final int DESTINATION_CLUSTERING = 1;
+    static final int ORIGIN_CLUSTERING = 0;
+    static final int DESTINATION_CLUSTERING = 1;
+
+    private static final int MAX_NUMBER_OF_CLUSTERS = 200;
 
     private static final int NOT_CLUSTERED = -1;
 
@@ -249,6 +251,9 @@ public class ClusterBuilder {
         if (k <= 0) {
             throw new IllegalArgumentException("Can not set number of clusters to " + k +
                     " There need to be more than 0 clusters.");
+        } else if (k > MAX_NUMBER_OF_CLUSTERS) {
+            throw new IllegalArgumentException("Can not set number of clusters to " + k +
+                    " The maximum is allowed number is " + MAX_NUMBER_OF_CLUSTERS + ".");
         }
         this.numberOfClusters = k;
     }

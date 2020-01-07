@@ -75,6 +75,7 @@ public class FilterController implements MqttCallback {
 
     // flag for switching clustering
     private boolean clusterLongDist = true;
+    private int nrClusters = DEFAULT_NUMBER_OF_CLUSTERS;
 
     private List<Filter> filters;
 
@@ -82,10 +83,10 @@ public class FilterController implements MqttCallback {
         gson = new Gson();
         tripLengthFilter = new DistanceFilter(SEPARATING_DISTANCE);
         filterInGothenburg = new LocationFilter(GOTHENBURG_CENTER, GOTHENBURG_MAX_RADIUS, "gothenburg", "not_gothenburg");
-        longTripClusterBuilderOrigin = new ClusterBuilder(DEFAULT_NUMBER_OF_CLUSTERS, ClusterBuilder.ORIGIN_CLUSTERING);
-        longTripClusterBuilderDestination = new ClusterBuilder(DEFAULT_NUMBER_OF_CLUSTERS, ClusterBuilder.DESTINATION_CLUSTERING);
-        shortTripClusterBuilderOrigin = new ClusterBuilder(DEFAULT_NUMBER_OF_CLUSTERS, ClusterBuilder.ORIGIN_CLUSTERING);
-        shortTripClusterBuilderDestination = new ClusterBuilder(DEFAULT_NUMBER_OF_CLUSTERS, ClusterBuilder.DESTINATION_CLUSTERING);
+        longTripClusterBuilderOrigin = new ClusterBuilder(nrClusters, ClusterBuilder.ORIGIN_CLUSTERING);
+        longTripClusterBuilderDestination = new ClusterBuilder(nrClusters, ClusterBuilder.DESTINATION_CLUSTERING);
+        shortTripClusterBuilderOrigin = new ClusterBuilder(nrClusters, ClusterBuilder.ORIGIN_CLUSTERING);
+        shortTripClusterBuilderDestination = new ClusterBuilder(nrClusters, ClusterBuilder.DESTINATION_CLUSTERING);
         System.out.println("Broker: " + broker + LS + USER_ID);
         middleware = new MqttClient(broker, USER_ID, new MemoryPersistence());
         middleware.connect();
@@ -130,6 +131,7 @@ public class FilterController implements MqttCallback {
         controller.chooseTopic(input);
         controller.inputLoop(input);
         input.close();
+        System.exit(0);
     }
 
     private void inputLoop(Scanner input) {
@@ -153,6 +155,9 @@ public class FilterController implements MqttCallback {
                 case "s":
                     clusterLongDist = !clusterLongDist;
                     activateClusterBuilders();
+                    break;
+                case "u":
+                    setClusterNumber(input);
                     break;
                 case "t":
                     if (filterTripLength) {
@@ -191,6 +196,7 @@ public class FilterController implements MqttCallback {
         out.println("* [o]rigin clustering only");
         out.println("* [d]estination clustering only");
         out.println("* [s]witch to clustering " + (clusterLongDist ? "short trips" : "long trips"));
+        out.println("* [u]pdate amount of clusters (currently " + nrClusters + ")");
 
 
         out.println("Toggle on/off filters:");
@@ -202,6 +208,23 @@ public class FilterController implements MqttCallback {
 
         out.flush();
         return true;
+    }
+
+    private void setClusterNumber(Scanner in) {
+        out.println("How many clusters would you like to use? Please enter an integer > 0:");
+        String nr = in.nextLine();
+        try {
+            int k = Integer.valueOf(nr);
+            shortTripClusterBuilderOrigin.setNumberOfClusters(k);
+            shortTripClusterBuilderDestination.setNumberOfClusters(k);
+            longTripClusterBuilderOrigin.setNumberOfClusters(k);
+            longTripClusterBuilderDestination.setNumberOfClusters(k);
+            nrClusters = k;
+            out.println("Number of clusters successfully set to " + k);
+        } catch (Exception e) {
+            out.println("Failed to change the number of clusters with the following error:");
+            out.println(e.getMessage());
+        }
     }
 
     private static String chooseBrokerAddress(Scanner input) {
